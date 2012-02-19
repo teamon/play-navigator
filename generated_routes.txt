@@ -1,0 +1,14 @@
+GET     /
+GET	/index
+GET	/about
+POST	/foo
+GET	/show/[Int]
+GET	/ws
+GET	/bar/[Float]/[Boolean]/blah/[java.lang.String]
+GET	/todos
+GET	/todos/new
+POST	/todos
+GET	/todos/[Int]
+GET	/todos/[Int]/edit
+PUT	/todos/[Int]
+DELETE	/todos/[Int]

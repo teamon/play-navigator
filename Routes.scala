@@ -10,6 +10,7 @@ object Routes extends Router.Routes with PlayNavigator {
   POST  on "foo"      to Application.about _
   GET   on "show" / * to Application.show
   GET   on "ws"       to Application.ws _
+  GET   on "bar" / * / * / "blah" / * to Application.bar
 
   resources("todos", Todos)
 }

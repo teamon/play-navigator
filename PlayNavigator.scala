@@ -67,8 +67,16 @@ trait Navigator[Out] {
 
   case class RoutePath2(method: Method, parts: List[PathElem]) extends RoutePath[RoutePath2] {
     def /(static: Static) = RoutePath2(method, parts :+ static)
+    def /(p: *.type) = RoutePath3(method, parts :+ p)
     def to[A : ParamMatcher : Manifest, B : ParamMatcher : Manifest](f2: (A, B) => Out) = addRoute(Route2(this, f2))
     def withMethod(method: Method) = RoutePath2(method, parts)
+  }
+
+  case class RoutePath3(method: Method, parts: List[PathElem]) extends RoutePath[RoutePath3] {
+    def /(static: Static) = RoutePath3(method, parts :+ static)
+    // def /(p: *.type) = RoutePath3(method, parts :+ p)
+    def to[A : ParamMatcher : Manifest, B : ParamMatcher : Manifest, C : ParamMatcher : Manifest](f3: (A,B,C) => Out) = addRoute(Route3(this, f3))
+    def withMethod(method: Method) = RoutePath3(method, parts)
   }
 
   implicit def stringToRoutePath0(name: String) = RoutePath0(ANY, Static(name) :: Nil)
@@ -121,6 +129,15 @@ trait Navigator[Out] {
         case _ => None
       }
     }
+
+    def resolvePath3[A : ParamMatcher, B : ParamMatcher, C : ParamMatcher](parts: List[PathElem], in: In, fun: (A,B,C) => Out): Option[() => Out] = {
+      val pm1 = implicitly[ParamMatcher[A]]
+      (in.headOption, parts) match {
+        case (Some(first), Static(name) :: rest) if name == first => resolvePath3(rest, in.drop(1), fun)
+        case (Some(pm1(a)), * :: rest) => resolvePath2(rest, in.drop(1), (b: B, c: C) => fun(a,b,c))
+        case _ => None
+      }
+    }
   }
 
   sealed trait Route {
@@ -148,8 +165,19 @@ trait Navigator[Out] {
     def args = manifest[A] :: manifest[B] :: Nil
   }
 
+  case class Route3[A : ParamMatcher : Manifest, B : ParamMatcher : Manifest, C : ParamMatcher : Manifest](path: RoutePath3, fun: (A,B,C) => Out) extends Route {
+    def matchPath(in: In) = Resolver.resolvePath3(path.parts, in, fun)
+    def args = List(manifest[A], manifest[B], manifest[C])
+  }
+
   lazy val _documentation = navigatorRoutes.map { route =>
-    (route.path.method.toString, route.path.parts.mkString("/", "/", ""), route.args.mkString(", "))
+
+    val (parts, _) = ((List[String](), route.args) /: route.path.parts){
+      case ((res, x :: xs), *) => (res :+ ("[" + x + "]"), xs)
+      case ((res, xs), e) => (res :+ e.toString, xs)
+    }
+
+    (route.path.method.toString, parts.mkString("/", "/", ""), route.args.mkString("(", ", ", ")"))
   }
 
   def resources[T : ParamMatcher : Manifest](name: String, controller: Resources[T, Out]) = {
@@ -183,6 +211,8 @@ trait PlayNavigator extends Navigator[Handler] {
     private var _lastHandler: () => Handler = null // this one sucks a lot
 
     def isDefinedAt(req: RequestHeader) = {
+        documentation foreach println
+
       val parts = req.path.split("/").dropWhile(_ == "")
       navigatorRoutes.view.map(_(req.method, parts)).collectFirst { case Some(e) => e } match {
         case Some(handler) =>
@@ -196,4 +226,3 @@ trait PlayNavigator extends Navigator[Handler] {
     def apply(req: RequestHeader) = _lastHandler()
   }
 }
-

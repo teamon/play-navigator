@@ -17,6 +17,10 @@ object Application extends Controller {
     Ok("Application.show(%d)" format id)
   }
 
+  def bar(f: Float, b: Boolean, s: String) = Action {
+    Ok("Application.bar(%f, %b, %s" format (f,b,s))
+  }
+
   import play.api.libs.iteratee._
 
   def ws = WebSocket.using[String] { request =>
