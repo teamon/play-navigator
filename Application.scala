@@ -18,7 +18,7 @@ object Application extends Controller {
   }
 
   def bar(f: Float, b: Boolean, s: String) = Action {
-    Ok("Application.bar(%f, %b, %s" format (f,b,s))
+    Ok("Application.bar(%f, %b, %s)" format (f,b,s))
   }
 
   import play.api.libs.iteratee._
