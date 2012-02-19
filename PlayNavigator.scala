@@ -22,6 +22,8 @@ trait Navigator[Out] {
     def on(name: String) = RoutePath0(this, Static(name) :: Nil)
   }
 
+  val root = RoutePath0(ANY, Nil)
+
   case object ANY extends Method
 
   // http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html
