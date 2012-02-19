@@ -1,3 +1,5 @@
+package navigator
+
 import play.api.mvc._
 
 trait Navigator[Out] {
@@ -77,8 +79,8 @@ trait Navigator[Out] {
 
   def silent[T](f: => T) = try { Some(f) } catch { case _ => None }
   implicit val IntParamMatcher = new ParamMatcher[Int] { def unapply(s: String) = silent(s.toInt) }
-  implicit val DoubleParamMatcher = new ParamMatcher[Long] { def unapply(s: String) = silent(s.toLong) }
-  implicit val DoubleParamMatcher = new ParamMatcher[Float] { def unapply(s: String) = silent(s.toFloat) }
+  implicit val LongParamMatcher = new ParamMatcher[Long] { def unapply(s: String) = silent(s.toLong) }
+  implicit val FloatParamMatcher = new ParamMatcher[Float] { def unapply(s: String) = silent(s.toFloat) }
   implicit val DoubleParamMatcher = new ParamMatcher[Double] { def unapply(s: String) = silent(s.toDouble) }
   implicit val StringParamMatcher = new ParamMatcher[String] { def unapply(s: String) = Some(s) }
   implicit val BooleanParamMatcher = new ParamMatcher[Boolean] {
@@ -147,10 +149,32 @@ trait Navigator[Out] {
   lazy val _documentation = navigatorRoutes.map { route =>
     (route.path.method.toString, route.path.parts.mkString("/", "/", ""), route.args.mkString(", "))
   }
+
+  def resources[T : ParamMatcher : Manifest](name: String, controller: Resources[T, Out]) = {
+    GET     on name               to controller.index _
+    GET     on name / "new"       to controller.`new` _
+    POST    on name               to controller.create _
+    GET     on name / *           to controller.show _
+    GET     on name / * / "edit"  to controller.edit _
+    PUT     on name / *           to controller.update _
+    DELETE  on name / *           to controller.delete _
+  }
 }
 
+trait Resources[T, Out] {
+  def index: Out
+  def `new`: Out
+  def create: Out
+  def show(id: T): Out
+  def edit(id: T): Out
+  def update(id: T): Out
+  def delete(id: T): Out
+}
 
-trait PlayNavigator extends Navigator[play.api.mvc.Handler] {
+trait PlayResources[T] extends Resources[T, Handler]
+
+trait PlayNavigator extends Navigator[Handler] {
+
   def documentation = _documentation
 
   def routes = new PartialFunction[RequestHeader, Handler] {
@@ -170,3 +194,4 @@ trait PlayNavigator extends Navigator[play.api.mvc.Handler] {
     def apply(req: RequestHeader) = _lastHandler()
   }
 }
+
