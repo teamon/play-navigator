@@ -1,4 +1,4 @@
-1. Remove conf/routes file
+1. Delete conf/routes file
 2. Put PlayNavigator.scala and Routes.scala in app/ directory
-3. Put Todos.scala in app/controllers/ directory
+3. Put Application.scala and Todos.scala in app/controllers/ directory
 
