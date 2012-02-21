@@ -1,16 +1,22 @@
 import play.core.Router
 import navigator.PlayNavigator
 
-object Routes extends Router.Routes with PlayNavigator {
+trait RoutesDefinition extends Router.Routes with PlayNavigator {
   import controllers._
 
-  GET   on root       to Application.index _
-  GET   on "index"    to Application.index _
-  GET   on "about"    to Application.about _
-  POST  on "foo"      to Application.about _
-  GET   on "show" / * to Application.show
-  GET   on "ws"       to Application.ws _
-  GET   on "bar" / * / * / "blah" / * to Application.bar
+  val home  = GET   on root       to Application.index _
+  val index = GET   on "index"    to Application.index _
+  val about = GET   on "about"    to Application.about _
+  val foo   = POST  on "foo"      to Application.about _
+  val show  = GET   on "show" / * to Application.show
+  val ws    = GET   on "ws"       to Application.ws _
+  val bar   = GET   on "bar" / * / * / "blah" / * to Application.bar
 
-  resources("todos", Todos)
+  val todos = resources("todos", Todos)
 }
+
+package controllers {
+  object Routing extends RoutesDefinition
+}
+
+object Routes extends RoutesDefinition

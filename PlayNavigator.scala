@@ -142,30 +142,39 @@ trait Navigator[Out] {
 
   sealed trait Route {
     def path: BasicRoutePath
-    def apply(method: String, parts: Array[String]) = {
+    def matches(method: String, parts: Array[String]) = {
       if(path.method.toString == method) matchPath(parts)
       else None
     }
     def args: List[scala.reflect.Manifest[_]]
     def matchPath(in: In): Option[() => Out]
+
+    def createPath(args: List[String]) = (("", args) /: path.parts){
+      case ((res, x :: xs), *) => (res + "/" + x, xs)
+      case ((res, xs), e) => (res + "/" + e.toString, xs)
+    }._1
   }
 
   case class Route0(path: RoutePath0, fun: () => Out) extends Route {
+    def apply() = createPath(Nil)
     def matchPath(in: In) = Resolver.resolvePath0(path.parts, in, fun)
     def args = Nil
   }
 
   case class Route1[A : ParamMatcher : Manifest](path: RoutePath1, fun: A => Out) extends Route {
+    def apply(a: A) = createPath(a.toString :: Nil)
     def matchPath(in: In) = Resolver.resolvePath1(path.parts, in, fun)
     def args = manifest[A] :: Nil
   }
 
   case class Route2[A : ParamMatcher : Manifest, B : ParamMatcher : Manifest](path: RoutePath2, fun: (A,B) => Out) extends Route {
+    def apply(a: A, b: B) = createPath(a.toString :: b.toString :: Nil)
     def matchPath(in: In) = Resolver.resolvePath2(path.parts, in, fun)
     def args = manifest[A] :: manifest[B] :: Nil
   }
 
   case class Route3[A : ParamMatcher : Manifest, B : ParamMatcher : Manifest, C : ParamMatcher : Manifest](path: RoutePath3, fun: (A,B,C) => Out) extends Route {
+    def apply(a: A, b: B, c: C) = createPath(a.toString :: b.toString :: c.toString :: Nil)
     def matchPath(in: In) = Resolver.resolvePath3(path.parts, in, fun)
     def args = List(manifest[A], manifest[B], manifest[C])
   }
@@ -180,14 +189,24 @@ trait Navigator[Out] {
     (route.path.method.toString, parts.mkString("/", "/", ""), route.args.mkString("(", ", ", ")"))
   }
 
-  def resources[T : ParamMatcher : Manifest](name: String, controller: Resources[T, Out]) = {
-    GET     on name               to controller.index _
-    GET     on name / "new"       to controller.`new` _
-    POST    on name               to controller.create _
-    GET     on name / *           to controller.show _
-    GET     on name / * / "edit"  to controller.edit _
-    PUT     on name / *           to controller.update _
-    DELETE  on name / *           to controller.delete _
+  trait ResourcesRouting[T] {
+    val index: Route0
+    val `new`: Route0
+    val create: Route0
+    val show: Route1[T]
+    val edit: Route1[T]
+    val update: Route1[T]
+    val delete: Route1[T]
+  }
+
+  def resources[T : ParamMatcher : Manifest](name: String, controller: Resources[T, Out]) = new ResourcesRouting[T] {
+    val index = GET     on name               to controller.index _
+    val `new` = GET     on name / "new"       to controller.`new` _
+    val create = POST    on name               to controller.create _
+    val show  = GET     on name / *           to controller.show _
+    val edit  = GET     on name / * / "edit"  to controller.edit _
+    val update = PUT     on name / *           to controller.update _
+    val delete = DELETE  on name / *           to controller.delete _
   }
 }
 
@@ -200,6 +219,8 @@ trait Resources[T, Out] {
   def update(id: T): Out
   def delete(id: T): Out
 }
+
+
 
 trait PlayResources[T] extends Resources[T, Handler]
 
@@ -214,7 +235,7 @@ trait PlayNavigator extends Navigator[Handler] {
         documentation foreach println
 
       val parts = req.path.split("/").dropWhile(_ == "")
-      navigatorRoutes.view.map(_(req.method, parts)).collectFirst { case Some(e) => e } match {
+      navigatorRoutes.view.map(_.matches(req.method, parts)).collectFirst { case Some(e) => e } match {
         case Some(handler) =>
           _lastHandler = handler
           true
@@ -226,3 +247,4 @@ trait PlayNavigator extends Navigator[Handler] {
     def apply(req: RequestHeader) = _lastHandler()
   }
 }
+
