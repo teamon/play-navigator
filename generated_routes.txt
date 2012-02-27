@@ -16,3 +16,5 @@ GET     /long/**
 GET     /ext/[Int].json
 GET     /ext/[String].xml
 GET     /api/v1/index
+GET     /api/v2/about
+GET     /showalt/[Int]

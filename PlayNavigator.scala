@@ -242,11 +242,7 @@ trait Navigator[Out] {
   }
 
   class Namespace(path: Static) extends DelayedInit {
-    def delayedInit(body: => Unit) = {
-      namespaceStack push path
-      body
-      namespaceStack.pop
-    }
+    def delayedInit(body: => Unit) = namespace(path)(body)
   }
 
 
