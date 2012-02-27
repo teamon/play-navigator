@@ -12,7 +12,7 @@ object Application extends Controller {
   }
 
   def about: Action[_] = Action {
-    Ok("Application.about => " + Routing.about())
+    Ok("Application.about => " + Routing.about() + " or " + Routing.api.v2.about())
   }
 
   def show(id: Int): Action[_] = Action {

@@ -232,14 +232,25 @@ trait Navigator[Out] {
     val delete: Route1[T]
   }
 
+  // namespace
   protected val namespaceStack = new collection.mutable.Stack[Static]
-  def currentNamespace = namespaceStack.toList
+  def currentNamespace = namespaceStack.toList.reverse
   def namespace(path: Static)(f: => Unit) = {
     namespaceStack push path
     f
     namespaceStack.pop
   }
 
+  class Namespace(path: Static) extends DelayedInit {
+    def delayedInit(body: => Unit) = {
+      namespaceStack push path
+      body
+      namespaceStack.pop
+    }
+  }
+
+
+  // resources
   def resources[T : ParamMatcher : Manifest](name: String, controller: Resources[T, Out]) = new ResourcesRouting[T] {
     val index  = GET     on name               to controller.index _
     val `new`  = GET     on name / "new"       to controller.`new` _
