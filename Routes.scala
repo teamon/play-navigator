@@ -11,6 +11,10 @@ trait RoutesDefinition extends Router.Routes with PlayNavigator {
   val show  = GET   on "show" / * to Application.show
   val ws    = GET   on "ws"       to Application.ws _
   val bar   = GET   on "bar" / * / * / "blah" / * to Application.bar
+  var long  = GET   on "long" / ** to Application.long
+
+  GET on "ext" / * as "json" to Application.extJson
+  GET on "ext" / * as "xml"  to Application.extXml
 
   val todos = resources("todos", Todos)
 }

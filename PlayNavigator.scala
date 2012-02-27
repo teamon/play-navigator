@@ -1,3 +1,4 @@
+
 package navigator
 
 import play.api.mvc._
@@ -16,6 +17,7 @@ trait Navigator[Out] {
     override def toString = name
   }
   case object * extends PathElem
+  case object ** extends PathElem
 
   sealed trait Method {
     def on[T](path: RoutePath[T]): T = path.withMethod(this)
@@ -40,43 +42,50 @@ trait Navigator[Out] {
   trait BasicRoutePath {
     def parts: List[PathElem]
     def method: Method
+    def ext: Option[String]
 
     def variableIndices = parts.zipWithIndex.collect { case (e,i) if e == * => i }
     def length = parts.length
 
-    override def toString = method.toString + "\t/" + parts.mkString("/")
+    override def toString = method.toString + "\t/" + parts.mkString("/") + extString
+
+    def extString = ext.map { "." + _ } getOrElse ""
   }
 
   sealed trait RoutePath[Self] extends BasicRoutePath {
     def withMethod(method: Method): Self
   }
 
-  case class RoutePath0(method: Method, parts: List[PathElem]) extends RoutePath[RoutePath0] {
+  case class RoutePath0(method: Method, parts: List[PathElem], ext: Option[String] = None) extends RoutePath[RoutePath0] {
     def /(static: Static) = RoutePath0(method, parts :+ static)
-    def /(p: *.type) = RoutePath1(method, parts :+ p)
+    def /(p: PathElem) = RoutePath1(method, parts :+ p)
     def to(f0: () => Out) = addRoute(Route0(this, f0))
     def withMethod(method: Method) = RoutePath0(method, parts)
+    def as(ext: String) = RoutePath0(method, parts, Some(ext))
   }
 
-  case class RoutePath1(method: Method, parts: List[PathElem]) extends RoutePath[RoutePath1] {
+  case class RoutePath1(method: Method, parts: List[PathElem], ext: Option[String] = None) extends RoutePath[RoutePath1] {
     def /(static: Static) = RoutePath1(method, parts :+ static)
-    def /(p: *.type) = RoutePath2(method, parts :+ p)
+    def /(p: PathElem) = RoutePath2(method, parts :+ p)
     def to[A : ParamMatcher : Manifest](f1: A => Out) = addRoute(Route1(this, f1))
     def withMethod(method: Method) = RoutePath1(method, parts)
+    def as(ext: String) = RoutePath1(method, parts, Some(ext))
   }
 
-  case class RoutePath2(method: Method, parts: List[PathElem]) extends RoutePath[RoutePath2] {
+  case class RoutePath2(method: Method, parts: List[PathElem], ext: Option[String] = None) extends RoutePath[RoutePath2] {
     def /(static: Static) = RoutePath2(method, parts :+ static)
     def /(p: *.type) = RoutePath3(method, parts :+ p)
     def to[A : ParamMatcher : Manifest, B : ParamMatcher : Manifest](f2: (A, B) => Out) = addRoute(Route2(this, f2))
     def withMethod(method: Method) = RoutePath2(method, parts)
+    def as(ext: String) = RoutePath2(method, parts, Some(ext))
   }
 
-  case class RoutePath3(method: Method, parts: List[PathElem]) extends RoutePath[RoutePath3] {
+  case class RoutePath3(method: Method, parts: List[PathElem], ext: Option[String] = None) extends RoutePath[RoutePath3] {
     def /(static: Static) = RoutePath3(method, parts :+ static)
     // def /(p: *.type) = RoutePath3(method, parts :+ p)
     def to[A : ParamMatcher : Manifest, B : ParamMatcher : Manifest, C : ParamMatcher : Manifest](f3: (A,B,C) => Out) = addRoute(Route3(this, f3))
     def withMethod(method: Method) = RoutePath3(method, parts)
+    def as(ext: String) = RoutePath3(method, parts, Some(ext))
   }
 
   implicit def stringToRoutePath0(name: String) = RoutePath0(ANY, Static(name) :: Nil)
@@ -105,7 +114,7 @@ trait Navigator[Out] {
     def resolvePath0(parts: List[PathElem], in: In, fun: () => Out): Option[() => Out] = {
       if(in.length == parts.length && parts.zipWithIndex.forall {
           case (elem, i) => elem match {
-            case * => true
+            case * | ** => true
             case Static(name) => name == in(i)
           }
       }) Some(fun)
@@ -117,6 +126,10 @@ trait Navigator[Out] {
       (in.headOption, parts) match {
         case (Some(first), Static(name) :: rest) if name == first => resolvePath1(rest, in.drop(1), fun)
         case (Some(pm1(a)), * :: rest) => resolvePath0(rest, in.drop(1), () => fun(a))
+        case (Some(first), ** :: rest) => join(in) match {
+          case pm1(a) => resolvePath0(Nil, Array(), () => fun(a))
+          case _ => None
+        }
         case _ => None
       }
     }
@@ -126,6 +139,10 @@ trait Navigator[Out] {
       (in.headOption, parts) match {
         case (Some(first), Static(name) :: rest) if name == first => resolvePath2(rest, in.drop(1), fun)
         case (Some(pm1(a)), * :: rest) => resolvePath1(rest, in.drop(1), (b: B) => fun(a,b))
+        case (Some(first), ** :: rest) => join(in) match {
+          case pm1(a) => resolvePath1(Nil, Array(), (b: B) => fun(a,b))
+          case _ => None
+        }
         case _ => None
       }
     }
@@ -135,16 +152,33 @@ trait Navigator[Out] {
       (in.headOption, parts) match {
         case (Some(first), Static(name) :: rest) if name == first => resolvePath3(rest, in.drop(1), fun)
         case (Some(pm1(a)), * :: rest) => resolvePath2(rest, in.drop(1), (b: B, c: C) => fun(a,b,c))
+        case (Some(first), ** :: rest) => join(in) match {
+          case pm1(a) => resolvePath2(Nil, Array(), (b: B, c: C) => fun(a,b,c))
+          case _ => None
+        }
         case _ => None
       }
     }
+
+    def join(in: In) = in.mkString("/")
   }
 
   sealed trait Route {
     def path: BasicRoutePath
-    def matches(method: String, parts: Array[String]) = {
-      if(path.method.toString == method) matchPath(parts)
-      else None
+    def matches(method: String, parts: Array[String]): Option[() => Out] = {
+      if(path.method.toString == method) {
+        path.ext map { ext =>
+            for {
+              last <- parts.lastOption
+              lastSplitted = last.split("\\.")
+              urlext <- lastSplitted.lastOption
+              if ext == urlext
+              matched <- matchPath(parts.dropRight(1) :+ lastSplitted.dropRight(1).mkString("."))
+            } yield matched
+        } getOrElse matchPath(parts)
+      } else {
+        None
+      }
     }
     def args: List[scala.reflect.Manifest[_]]
     def matchPath(in: In): Option[() => Out]
@@ -186,7 +220,7 @@ trait Navigator[Out] {
       case ((res, xs), e) => (res :+ e.toString, xs)
     }
 
-    (route.path.method.toString, parts.mkString("/", "/", ""), route.args.mkString("(", ", ", ")"))
+    (route.path.method.toString, parts.mkString("/", "/", "") + route.path.extString, route.args.mkString("(", ", ", ")"))
   }
 
   trait ResourcesRouting[T] {
@@ -232,7 +266,7 @@ trait PlayNavigator extends Navigator[Handler] {
     private var _lastHandler: () => Handler = null // this one sucks a lot
 
     def isDefinedAt(req: RequestHeader) = {
-        documentation foreach println
+        // documentation foreach println
 
       val parts = req.path.split("/").dropWhile(_ == "")
       navigatorRoutes.view.map(_.matches(req.method, parts)).collectFirst { case Some(e) => e } match {

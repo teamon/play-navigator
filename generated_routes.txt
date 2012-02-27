@@ -12,3 +12,6 @@ GET	/todos/[Int]
 GET	/todos/[Int]/edit
 PUT	/todos/[Int]
 DELETE	/todos/[Int]
+GET     /long/**
+GET     /ext/[Int].json
+0GET    /ext/[String].xml

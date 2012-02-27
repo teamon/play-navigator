@@ -23,6 +23,13 @@ object Application extends Controller {
     Ok("Application.bar(%f, %b, %s) => %s" format (f, b, s, Routing.bar(f,b,s)))
   }
 
+  def long(path: String) = Action {
+    Ok("Application.long(%s)" format path)
+  }
+
+  def extJson(id: Int) = Action { Ok("Application.extJson(%d)" format id) }
+  def extXml(id: String) = Action { Ok("Application.extXml(%s)" format id) }
+
   import play.api.libs.iteratee._
 
   def ws = WebSocket.using[String] { request =>
