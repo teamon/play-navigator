@@ -269,7 +269,6 @@ trait Resources[T, Out] {
 }
 
 
-
 trait PlayResources[T] extends Resources[T, Handler]
 
 trait PlayNavigator extends Navigator[Handler] {
