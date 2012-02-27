@@ -272,6 +272,7 @@ trait Resources[T, Out] {
 trait PlayResources[T] extends Resources[T, Handler]
 
 trait PlayNavigator extends Navigator[Handler] {
+  def redirect(url: String, status: Int = controllers.Default.SEE_OTHER) = () => Action { controllers.Default.Redirect(url, status) }
 
   def documentation = _documentation
 

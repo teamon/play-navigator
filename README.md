@@ -72,6 +72,9 @@ val api = new Namespace("api"){
 
 // and back to top-level namespace
 GET   on "showalt" / * to Application.show
+
+// redirect
+GET on "redirect-me" to redirect("http://google.com")
 ```
 
 `Application` and `Todos` controller used in example

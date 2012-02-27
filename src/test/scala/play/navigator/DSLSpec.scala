@@ -74,6 +74,10 @@ object RoutesDefinition extends Navigator[Unit] {
   val afternamespace = GET  on "about" to fun0
 }
 
+object PlayRoutesDefinition extends PlayNavigator {
+  GET on "redirect-me" to redirect("http://google.com")
+}
+
 class DSLSpec extends Specification {
   import RoutesDefinition._
 
