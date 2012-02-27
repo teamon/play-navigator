@@ -1,46 +1,41 @@
-// package controllers
+package controllers
 
-// // import play.api._
-// import play.api.mvc._
+import play.api.mvc._
 
+object Application extends Controller {
 
+  def index(): Action[_] = Action {
+    Ok("Applcation.index => " + routes.index())
+  }
 
-// object Application extends Controller {
+  def about(): Action[_] = Action {
+    Ok("Application.about => " + routes.about() + " or " + routes.api.v2.about())
+  }
 
-//   def index: Action[_] = Action {
-//     Ok("Applcation.index => " + Routing.index())
-//   }
+  def show(id: Int): Action[_] = Action {
+    Ok("Application.show(%d) => %s" format (id, routes.show(id)))
+  }
 
-//   def about: Action[_] = Action {
-//     Ok("Application.about => " + Routing.about() + " or " + Routing.api.v2.about())
-//   }
+  def bar(f: Float, b: Boolean, s: String): Action[_] = Action {
+    Ok("Application.bar(%f, %b, %s) => %s" format (f, b, s, routes.bar(f,b,s)))
+  }
 
-//   def show(id: Int): Action[_] = Action {
-//     Ok("Application.show(%d) => %s" format (id, Routing.show(id)))
-//   }
+  def long(path: String) = Action {
+    Ok("Application.long(%s)" format path)
+  }
 
-//   def bar(f: Float, b: Boolean, s: String): Action[_] = Action {
-//     Ok("Application.bar(%f, %b, %s) => %s" format (f, b, s, Routing.bar(f,b,s)))
-//   }
+  def extJson(id: Int) = Action { Ok("Application.extJson(%d)" format id) }
+  def extXml(id: String) = Action { Ok("Application.extXml(%s)" format id) }
 
-//   def long(path: String) = Action {
-//     Ok("Application.long(%s)" format path)
-//   }
+  import play.api.libs.iteratee._
 
-//   def extJson(id: Int) = Action { Ok("Application.extJson(%d)" format id) }
-//   def extXml(id: String) = Action { Ok("Application.extXml(%s)" format id) }
+  def ws() = WebSocket.using[String] { request =>
+    val in = Iteratee.foreach[String](println).mapDone { _ =>
+      println("Disconnected")
+    }
 
-//   import play.api.libs.iteratee._
+    val out = Enumerator("Hello!")
 
-//   def ws = WebSocket.using[String] { request =>
-//     // Log events to the console
-//     val in = Iteratee.foreach[String](println).mapDone { _ =>
-//       println("Disconnected")
-//     }
-
-//     // Send a single 'Hello!' message
-//     val out = Enumerator("Hello!")
-
-//     (in, out)
-//   }
-// }
+    (in, out)
+  }
+}
