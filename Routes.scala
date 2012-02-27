@@ -1,4 +1,3 @@
-
 import play.core.Router
 import navigator.PlayNavigator
 

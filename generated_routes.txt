@@ -15,4 +15,4 @@ DELETE	/todos/[Int]
 GET     /long/**
 GET     /ext/[Int].json
 GET     /ext/[String].xml
-GET     /v1/api/index
+GET     /api/v1/index
