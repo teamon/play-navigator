@@ -2,12 +2,16 @@
 
 ## Instalation
 
-Add `play-navigator` to your `build.sbt` file
+Add `play-navigator` to your `project/Build.scala` file
 
 ``` scala
-resolvers += "teamon.eu repo" at "http://repo.teamon.eu"
+val appDependencies = Seq(
+  "eu.teamon" %% "play-navigator" % "0.1.0-SNAPSHOT"
+)
 
-libraryDependencies += "eu.teamon" %% "play-navigator" % "0.1.0-SNAPSHOT"
+val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
+  resolvers += "teamon.eu repo" at "http://repo.teamon.eu"
+)
 ```
 
 Delete `conf/routes` file
