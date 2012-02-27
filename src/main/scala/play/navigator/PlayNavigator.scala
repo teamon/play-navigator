@@ -248,20 +248,20 @@ trait Navigator[Out] {
 
   // resources
   def resources[T : ParamMatcher : Manifest](name: String, controller: Resources[T, Out]) = new ResourcesRouting[T] {
-    val index  = GET     on name               to controller.index _
-    val `new`  = GET     on name / "new"       to controller.`new` _
-    val create = POST    on name               to controller.create _
-    val show   = GET     on name / *           to controller.show _
-    val edit   = GET     on name / * / "edit"  to controller.edit _
-    val update = PUT     on name / *           to controller.update _
-    val delete = DELETE  on name / *           to controller.delete _
+    val index  = GET     on name               to controller.index
+    val `new`  = GET     on name / "new"       to controller.`new`
+    val create = POST    on name               to controller.create
+    val show   = GET     on name / *           to controller.show
+    val edit   = GET     on name / * / "edit"  to controller.edit
+    val update = PUT     on name / *           to controller.update
+    val delete = DELETE  on name / *           to controller.delete
   }
 }
 
 trait Resources[T, Out] {
-  def index: Out
-  def `new`: Out
-  def create: Out
+  def index(): Out
+  def `new`(): Out
+  def create(): Out
   def show(id: T): Out
   def edit(id: T): Out
   def update(id: T): Out
