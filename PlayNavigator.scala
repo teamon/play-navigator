@@ -1,4 +1,3 @@
-
 package navigator
 
 import play.api.mvc._
@@ -59,7 +58,7 @@ trait Navigator[Out] {
   case class RoutePath0(method: Method, parts: List[PathElem], ext: Option[String] = None) extends RoutePath[RoutePath0] {
     def /(static: Static) = RoutePath0(method, parts :+ static)
     def /(p: PathElem) = RoutePath1(method, parts :+ p)
-    def to(f0: () => Out) = addRoute(Route0(this, f0))
+    def to(f0: () => Out) = addRoute(Route0(this.copy(parts = currentNamespace ++ parts), f0))
     def withMethod(method: Method) = RoutePath0(method, parts)
     def as(ext: String) = RoutePath0(method, parts, Some(ext))
   }
@@ -67,7 +66,7 @@ trait Navigator[Out] {
   case class RoutePath1(method: Method, parts: List[PathElem], ext: Option[String] = None) extends RoutePath[RoutePath1] {
     def /(static: Static) = RoutePath1(method, parts :+ static)
     def /(p: PathElem) = RoutePath2(method, parts :+ p)
-    def to[A : ParamMatcher : Manifest](f1: A => Out) = addRoute(Route1(this, f1))
+    def to[A : ParamMatcher : Manifest](f1: A => Out) = addRoute(Route1(this.copy(parts = currentNamespace ++ parts), f1))
     def withMethod(method: Method) = RoutePath1(method, parts)
     def as(ext: String) = RoutePath1(method, parts, Some(ext))
   }
@@ -75,7 +74,7 @@ trait Navigator[Out] {
   case class RoutePath2(method: Method, parts: List[PathElem], ext: Option[String] = None) extends RoutePath[RoutePath2] {
     def /(static: Static) = RoutePath2(method, parts :+ static)
     def /(p: *.type) = RoutePath3(method, parts :+ p)
-    def to[A : ParamMatcher : Manifest, B : ParamMatcher : Manifest](f2: (A, B) => Out) = addRoute(Route2(this, f2))
+    def to[A : ParamMatcher : Manifest, B : ParamMatcher : Manifest](f2: (A, B) => Out) = addRoute(Route2(this.copy(parts = currentNamespace ++ parts), f2))
     def withMethod(method: Method) = RoutePath2(method, parts)
     def as(ext: String) = RoutePath2(method, parts, Some(ext))
   }
@@ -83,7 +82,7 @@ trait Navigator[Out] {
   case class RoutePath3(method: Method, parts: List[PathElem], ext: Option[String] = None) extends RoutePath[RoutePath3] {
     def /(static: Static) = RoutePath3(method, parts :+ static)
     // def /(p: *.type) = RoutePath3(method, parts :+ p)
-    def to[A : ParamMatcher : Manifest, B : ParamMatcher : Manifest, C : ParamMatcher : Manifest](f3: (A,B,C) => Out) = addRoute(Route3(this, f3))
+    def to[A : ParamMatcher : Manifest, B : ParamMatcher : Manifest, C : ParamMatcher : Manifest](f3: (A,B,C) => Out) = addRoute(Route3(this.copy(parts = currentNamespace ++ parts), f3))
     def withMethod(method: Method) = RoutePath3(method, parts)
     def as(ext: String) = RoutePath3(method, parts, Some(ext))
   }
@@ -231,6 +230,14 @@ trait Navigator[Out] {
     val edit: Route1[T]
     val update: Route1[T]
     val delete: Route1[T]
+  }
+
+  protected val namespaceStack = new collection.mutable.Stack[Static]
+  def currentNamespace = namespaceStack.toList
+  def namespace(path: Static)(f: => Unit) = {
+    namespaceStack push path
+    f
+    namespaceStack.pop
   }
 
   def resources[T : ParamMatcher : Manifest](name: String, controller: Resources[T, Out]) = new ResourcesRouting[T] {

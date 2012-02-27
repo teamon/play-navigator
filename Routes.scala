@@ -1,3 +1,4 @@
+
 import play.core.Router
 import navigator.PlayNavigator
 
@@ -17,6 +18,12 @@ trait RoutesDefinition extends Router.Routes with PlayNavigator {
   GET on "ext" / * as "xml"  to Application.extXml
 
   val todos = resources("todos", Todos)
+
+  namespace("api"){
+    namespace("v1"){
+      GET on "index" to Application.index _
+    }
+  }
 }
 
 package controllers {
