@@ -65,6 +65,9 @@ object RoutesDefinition extends PlayNavigator with Controller {
   val extjson = GET on "ext" / * as "json" to fun1
   val extxml  = GET on "ext" / * as "xml"  to fun1
 
+  // Redirect
+  GET on "redirect-me" to redirect("http://google.com")
+
 
   GET on "xa" / "ya" to (() => Action { Ok("xa & ya") })
   GET on "x" / * to ((x: Int) => Action { Ok("xint = " + x) })

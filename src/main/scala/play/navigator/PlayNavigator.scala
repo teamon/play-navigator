@@ -35,7 +35,7 @@ object navigator {
       route
     }
 
-    //   def redirect(url: String, status: Int = controllers.Default.SEE_OTHER) = () => Action { controllers.Default.Redirect(url, status) }
+    def redirect(url: String, status: Int = controllers.Default.SEE_OTHER) = () => Action { controllers.Default.Redirect(url, status) }
 
     def documentation = _documentation
 

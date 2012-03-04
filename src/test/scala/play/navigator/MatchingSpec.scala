@@ -39,4 +39,7 @@ class MatchingSpec extends Specification {
     "not match GET /mext/3.css" in { get("/mext/3.css") === None }
   }
 
+  "redirect" should {
+    "match GET /redirect-me" in { get("/redirect-me") === Some("") }
+  }
 }
