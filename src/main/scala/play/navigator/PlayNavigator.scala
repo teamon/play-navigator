@@ -5,6 +5,15 @@ import play.core.Router
 
 
 object navigator {
+  type Out = Handler
+
+  sealed trait PathElem
+  case class Static(name: String) extends PathElem {
+    override def toString = name
+  }
+  case object * extends PathElem
+  case object ** extends PathElem
+
 
   trait Resources[T, Out] {
     def index(): Out
@@ -16,7 +25,9 @@ object navigator {
     def delete(id: T): Out
   }
 
-  trait Navigator[Out] {
+  trait PlayNavigator extends Router.Routes {
+    val self = this
+
     def routesList = _routesList.toList
     val _routesList = new collection.mutable.ListBuffer[Route[_]]
     def addRoute[R <: Route[_]](route: R) = {
@@ -24,18 +35,40 @@ object navigator {
       route
     }
 
+    //   def redirect(url: String, status: Int = controllers.Default.SEE_OTHER) = () => Action { controllers.Default.Redirect(url, status) }
 
-    sealed trait PathElem
-    case class Static(name: String) extends PathElem {
-      override def toString = name
+    def documentation = _documentation
+
+    lazy val _documentation = routesList.map { route =>
+
+      val (parts, _) = ((List[String](), route.args) /: route.routeDef.elems){
+        case ((res, x :: xs), *) => (res :+ ("[" + x + "]"), xs)
+        case ((res, xs), e) => (res :+ e.toString, xs)
+      }
+
+      (route.routeDef.method.toString, parts.mkString("/", "/", "") + route.routeDef.extString, route.args.mkString("(", ", ", ")"))
     }
-    case object * extends PathElem
-    case object ** extends PathElem
+
+    def routes = new PartialFunction[RequestHeader, Handler] {
+      private var _lastHandler: () => Handler = null // XXX: this one sucks a lot
+
+      def apply(req: RequestHeader) = _lastHandler()
+
+      def isDefinedAt(req: RequestHeader) = {
+        routesList.view.map(_.unapply(req)).collectFirst { case Some(e) => e }.map { r =>
+          _lastHandler = r // XXX: performance hack
+          r
+        }.isDefined
+      }
+    }
+
+
 
     sealed trait Method {
       def on[R](routeDef: RouteDef[R]): R = routeDef.withMethod(this)
       def matches(s: String) = this.toString == s
     }
+
 
     val root = RouteDef0(ANY, Nil)
 
@@ -115,6 +148,9 @@ object navigator {
       def to(f0: () => Out) = addRoute(Route0(this.copy(elems = currentNamespace ::: elems), f0))
       def withMethod(method: Method) = RouteDef0(method, elems)
       def as(ext: String) = RouteDef0(method, elems, Some(ext))
+      def -->[M <: PlayModule](module: PlayNavigator => M) = withNamespace(elems.collect { case s @ Static(_) => s }){
+        module(PlayNavigator.this)
+      }
     }
 
     object PathMatcher0 {
@@ -379,39 +415,21 @@ object navigator {
       namespaceStack.pop
     }
 
+    def withNamespace[T](path: List[Static])(f: => T) = {
+      path.foreach { p => namespaceStack push p }
+      val r = f
+      path.foreach { p => namespaceStack.pop }
+      r
+    }
+
+
     class Namespace(path: Static) extends DelayedInit {
       def delayedInit(body: => Unit) = namespace(path)(body)
     }
   }
 
-  trait PlayNavigator extends Router.Routes with Navigator[Handler] {
-  //   def redirect(url: String, status: Int = controllers.Default.SEE_OTHER) = () => Action { controllers.Default.Redirect(url, status) }
-
-    def documentation = _documentation
-
-
-    lazy val _documentation = routesList.map { route =>
-
-      val (parts, _) = ((List[String](), route.args) /: route.routeDef.elems){
-        case ((res, x :: xs), *) => (res :+ ("[" + x + "]"), xs)
-        case ((res, xs), e) => (res :+ e.toString, xs)
-      }
-
-      (route.routeDef.method.toString, parts.mkString("/", "/", "") + route.routeDef.extString, route.args.mkString("(", ", ", ")"))
-    }
-
-    def routes = new PartialFunction[RequestHeader, Handler] {
-      private var _lastHandler: () => Handler = null // XXX: this one sucks a lot
-
-      def apply(req: RequestHeader) = _lastHandler()
-
-      def isDefinedAt(req: RequestHeader) = {
-        routesList.view.map(_.unapply(req)).collectFirst { case Some(e) => e }.map { r =>
-          _lastHandler = r // XXX: performance hack
-          r
-        }.isDefined
-      }
-    }
+  class PlayModule(parent: PlayNavigator) extends PlayNavigator with DelayedInit {
+    def delayedInit(body: => Unit) = withNamespace(parent.currentNamespace)(body)
   }
 
   trait PlayResourcesController[T] extends Resources[T, Handler] with Controller

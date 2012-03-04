@@ -13,8 +13,21 @@ object TestResource extends PlayResourcesController[Int] {
   def delete(id: Int) = Action { Ok("delete") }
 }
 
+case class FirstModule(parent: PlayNavigator) extends PlayModule(parent) with Controller {
+  val home = GET on root to (() => Action { Ok("FirstModule index") } )
+  val foobar = GET on "foo" / "bar" / * to ((i: Int) => Action { Ok("FirstModule foo/bar/" + i) } )
+}
+
+case class SecondModule(parent: PlayNavigator) extends PlayModule(parent) with Controller {
+  val home = GET on root to (() => Action { Ok("SecondModule index") } )
+  val foobar = GET on "foo" / "bar" / * to ((i: Int) => Action { Ok("SecondModule foo/bar/" + i) } )
+}
+
 object RoutesDefinition extends PlayNavigator with Controller {
   // import controllers._
+
+  val first = "first" --> FirstModule
+  val second = "second" / "module" --> SecondModule
 
   val fun0 = () => Action { Ok("index") }
   val fun1 = (a: String) => Action { Ok("index") }

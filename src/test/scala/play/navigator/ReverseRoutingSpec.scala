@@ -52,5 +52,12 @@ class ReverseRoutingSpec extends Specification {
       api.v2.about() === "/api/v2/about"
       afternamespace() === "/about"
     }
+
+    "module" in {
+      first.home() === "/first"
+      first.foobar(1) === "/first/foo/bar/1"
+      second.home() === "/second/module"
+      second.foobar(1) === "/second/module/foo/bar/1"
+    }
   }
 }
