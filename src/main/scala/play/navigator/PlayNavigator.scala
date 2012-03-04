@@ -1,298 +1,418 @@
-package play.navigator
+package play
 
 import play.api.mvc._
+import play.core.Router
 
-trait Navigator[Out] {
-  val navigatorRoutes = new collection.mutable.ListBuffer[Route]
-  def addRoute[T <: Route](route: T): T = {
-    navigatorRoutes += route
-    route
+
+object navigator {
+
+  trait Resources[T, Out] {
+    def index(): Out
+    def `new`(): Out
+    def create(): Out
+    def show(id: T): Out
+    def edit(id: T): Out
+    def update(id: T): Out
+    def delete(id: T): Out
   }
 
-  type In = Array[String]
-
-  sealed trait PathElem
-  case class Static(name: String) extends PathElem {
-    override def toString = name
-  }
-  case object * extends PathElem
-  case object ** extends PathElem
-
-  sealed trait Method {
-    def on[T](path: RoutePath[T]): T = path.withMethod(this)
-    def on(name: String) = RoutePath0(this, Static(name) :: Nil)
-  }
-
-  val root = RoutePath0(ANY, Nil)
-
-  case object ANY extends Method
-
-  // http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html
-  case object OPTIONS extends Method
-  case object GET extends Method
-  case object HEAD extends Method
-  case object POST extends Method
-  case object PUT extends Method
-  case object DELETE extends Method
-  case object TRACE extends Method
-  case object CONNECT extends Method
-
-
-  trait BasicRoutePath {
-    def parts: List[PathElem]
-    def method: Method
-    def ext: Option[String]
-
-    def variableIndices = parts.zipWithIndex.collect { case (e,i) if e == * => i }
-    def length = parts.length
-
-    override def toString = method.toString + "\t/" + parts.mkString("/") + extString
-
-    def extString = ext.map { "." + _ } getOrElse ""
-  }
-
-  sealed trait RoutePath[Self] extends BasicRoutePath {
-    def withMethod(method: Method): Self
-  }
-
-  case class RoutePath0(method: Method, parts: List[PathElem], ext: Option[String] = None) extends RoutePath[RoutePath0] {
-    def /(static: Static) = RoutePath0(method, parts :+ static)
-    def /(p: PathElem) = RoutePath1(method, parts :+ p)
-    def to(f0: () => Out) = addRoute(Route0(this.copy(parts = currentNamespace ++ parts), f0))
-    def withMethod(method: Method) = RoutePath0(method, parts)
-    def as(ext: String) = RoutePath0(method, parts, Some(ext))
-  }
-
-  case class RoutePath1(method: Method, parts: List[PathElem], ext: Option[String] = None) extends RoutePath[RoutePath1] {
-    def /(static: Static) = RoutePath1(method, parts :+ static)
-    def /(p: PathElem) = RoutePath2(method, parts :+ p)
-    def to[A : ParamMatcher : Manifest](f1: A => Out) = addRoute(Route1(this.copy(parts = currentNamespace ++ parts), f1))
-    def withMethod(method: Method) = RoutePath1(method, parts)
-    def as(ext: String) = RoutePath1(method, parts, Some(ext))
-  }
-
-  case class RoutePath2(method: Method, parts: List[PathElem], ext: Option[String] = None) extends RoutePath[RoutePath2] {
-    def /(static: Static) = RoutePath2(method, parts :+ static)
-    def /(p: *.type) = RoutePath3(method, parts :+ p)
-    def to[A : ParamMatcher : Manifest, B : ParamMatcher : Manifest](f2: (A, B) => Out) = addRoute(Route2(this.copy(parts = currentNamespace ++ parts), f2))
-    def withMethod(method: Method) = RoutePath2(method, parts)
-    def as(ext: String) = RoutePath2(method, parts, Some(ext))
-  }
-
-  case class RoutePath3(method: Method, parts: List[PathElem], ext: Option[String] = None) extends RoutePath[RoutePath3] {
-    def /(static: Static) = RoutePath3(method, parts :+ static)
-    // def /(p: *.type) = RoutePath3(method, parts :+ p)
-    def to[A : ParamMatcher : Manifest, B : ParamMatcher : Manifest, C : ParamMatcher : Manifest](f3: (A,B,C) => Out) = addRoute(Route3(this.copy(parts = currentNamespace ++ parts), f3))
-    def withMethod(method: Method) = RoutePath3(method, parts)
-    def as(ext: String) = RoutePath3(method, parts, Some(ext))
-  }
-
-  implicit def stringToRoutePath0(name: String) = RoutePath0(ANY, Static(name) :: Nil)
-  implicit def asterixToRoutePath1(ast: *.type) = RoutePath1(ANY, ast :: Nil)
-  implicit def stringToStatic(name: String) = Static(name)
-
-  trait ParamMatcher[T]{
-    def unapply(s: String): Option[T]
-  }
-
-  def silent[T](f: => T) = try { Some(f) } catch { case _ => None }
-  implicit val IntParamMatcher = new ParamMatcher[Int] { def unapply(s: String) = silent(s.toInt) }
-  implicit val LongParamMatcher = new ParamMatcher[Long] { def unapply(s: String) = silent(s.toLong) }
-  implicit val FloatParamMatcher = new ParamMatcher[Float] { def unapply(s: String) = silent(s.toFloat) }
-  implicit val DoubleParamMatcher = new ParamMatcher[Double] { def unapply(s: String) = silent(s.toDouble) }
-  implicit val StringParamMatcher = new ParamMatcher[String] { def unapply(s: String) = Some(s) }
-  implicit val BooleanParamMatcher = new ParamMatcher[Boolean] {
-    def unapply(s: String) = s match {
-      case "1" | "true" => Some(true)
-      case "0" | "false" => Some(false)
-      case _ => None
+  trait Navigator[Out] {
+    def routesList = _routesList.toList
+    val _routesList = new collection.mutable.ListBuffer[Route[_]]
+    def addRoute[R <: Route[_]](route: R) = {
+      _routesList += route
+      route
     }
-  }
 
-  object Resolver {
-    def resolvePath0(parts: List[PathElem], in: In, fun: () => Out): Option[() => Out] = {
-      if(in.length == parts.length && parts.zipWithIndex.forall {
-          case (elem, i) => elem match {
-            case * | ** => true
-            case Static(name) => name == in(i)
+
+    sealed trait PathElem
+    case class Static(name: String) extends PathElem {
+      override def toString = name
+    }
+    case object * extends PathElem
+    case object ** extends PathElem
+
+    sealed trait Method {
+      def on[R](routeDef: RouteDef[R]): R = routeDef.withMethod(this)
+      def matches(s: String) = this.toString == s
+    }
+
+    val root = RouteDef0(ANY, Nil)
+
+    implicit def stringToRouteDef0(name: String) = RouteDef0(ANY, Static(name) :: Nil)
+    implicit def asterixToRoutePath1(ast: *.type) = RouteDef1(ANY, ast :: Nil)
+    implicit def stringToStatic(name: String) = Static(name)
+
+    case object ANY extends Method {
+      override def matches(s: String) = true
+    }
+
+    // http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html
+    case object OPTIONS extends Method
+    case object GET extends Method
+    case object HEAD extends Method
+    case object POST extends Method
+    case object PUT extends Method
+    case object DELETE extends Method
+    case object TRACE extends Method
+    case object CONNECT extends Method
+
+
+    // trait BasicRoutePath {
+    //   def parts: List[PathElem]
+    //   def method: Method
+    //   def ext: Option[String]
+
+    //   def variableIndices = parts.zipWithIndex.collect { case (e,i) if e == * => i }
+    //   def length = parts.length
+
+    //   override def toString = method.toString + "\t/" + parts.mkString("/") + extString
+
+    //   def extString = ext.map { "." + _ } getOrElse ""
+    // }
+
+    sealed trait Route[RD] {
+      def routeDef: RouteDef[RD]
+      def unapply(req: RequestHeader): Option[() => Out]
+      def basic(req: RequestHeader) = {
+        lazy val extMatched = (for { extA <- routeDef.ext; extB <- extractExt(req.path)._2 } yield extA == extB) getOrElse true
+        routeDef.method.matches(req.method) && extMatched
+      }
+
+      def splitPath(path: String) = extractExt(path)._1.split("/").dropWhile(_ == "").toList
+
+      def extractExt(path: String) = {
+        routeDef.ext.map { _ =>
+          path.reverse.split("\\.", 2).map(_.reverse).toList match {
+            case x :: p :: Nil => (p, Some(x))
+            case p :: Nil => (p, None)
+            case Nil => ("/", None)
           }
-      }) Some(fun)
-      else None
+        } getOrElse (path, None)
+      }
+
+      def args: List[Manifest[_]]
     }
 
-    def resolvePath1[A : ParamMatcher](parts: List[PathElem], in: In, fun: A => Out): Option[() => Out] = {
-      val pm1 = implicitly[ParamMatcher[A]]
-      (in.headOption, parts) match {
-        case (Some(first), Static(name) :: rest) if name == first => resolvePath1(rest, in.drop(1), fun)
-        case (Some(pm1(a)), * :: rest) => resolvePath0(rest, in.drop(1), () => fun(a))
-        case (Some(first), ** :: rest) => join(in) match {
-          case pm1(a) => resolvePath0(Nil, Array(), () => fun(a))
-          case _ => None
-        }
+    case class Route0(routeDef: RouteDef0, f0: () => Out) extends Route[RouteDef0] {
+      def apply(ext: Option[String] = routeDef.ext) = PathMatcher0(routeDef.elems, ext)()
+      def unapply(req: RequestHeader): Option[() => Out] =
+        if(basic(req)) PathMatcher0.unapply(routeDef.elems, splitPath(req.path), f0) else None
+      def args = Nil
+    }
+
+    sealed trait RouteDef[Self] {
+      def withMethod(method: Method): Self
+      def method: Method
+      def elems: List[PathElem]
+      def ext: Option[String]
+      def extString = ext map { "." + _ } getOrElse ""
+    }
+
+    case class RouteDef0(method: Method, elems: List[PathElem], ext: Option[String] = None) extends RouteDef[RouteDef0] {
+      def /(static: Static) = RouteDef0(method, elems :+ static)
+      def /(p: PathElem) = RouteDef1(method, elems :+ p)
+      def to(f0: () => Out) = addRoute(Route0(this.copy(elems = currentNamespace ::: elems), f0))
+      def withMethod(method: Method) = RouteDef0(method, elems)
+      def as(ext: String) = RouteDef0(method, elems, Some(ext))
+    }
+
+    object PathMatcher0 {
+      def apply(elems: List[PathElem], ext: Option[String])(): String = elems.mkString("/", "/", ext.map { "." + _ } getOrElse "")
+      def unapply(elems: List[PathElem], parts: List[String], handler: () => Out): Option[() => Out] = (elems, parts) match {
+        case (Nil, Nil) => Some(handler)
+        case (Static(x) :: xs, y :: ys) if x == y => unapply(xs, ys, handler)
         case _ => None
       }
     }
 
-    def resolvePath2[A : ParamMatcher, B : ParamMatcher](parts: List[PathElem], in: In, fun: (A,B) => Out): Option[() => Out] = {
-      val pm1 = implicitly[ParamMatcher[A]]
-      (in.headOption, parts) match {
-        case (Some(first), Static(name) :: rest) if name == first => resolvePath2(rest, in.drop(1), fun)
-        case (Some(pm1(a)), * :: rest) => resolvePath1(rest, in.drop(1), (b: B) => fun(a,b))
-        case (Some(first), ** :: rest) => join(in) match {
-          case pm1(a) => resolvePath1(Nil, Array(), (b: B) => fun(a,b))
-          case _ => None
-        }
+
+
+
+
+
+    case class RouteDef1(method: Method, elems: List[PathElem], ext: Option[String] = None) extends RouteDef[RouteDef1]{
+      def /(static: Static) = RouteDef1(method, elems :+ static)
+      def /(p: PathElem) = RouteDef2(method, elems :+ p)
+      def to[A: PathParam : Manifest](f1: (A) => Out) = addRoute(Route1(this.copy(elems = currentNamespace ::: elems), f1))
+      def withMethod(method: Method) = RouteDef1(method, elems)
+      def as(ext: String) = RouteDef1(method, elems, Some(ext))
+    }
+
+    case class Route1[A: PathParam : Manifest](routeDef: RouteDef1, f1: (A) => Out) extends Route[RouteDef1] {
+      def apply(a: A, ext: Option[String] = routeDef.ext) = PathMatcher1(routeDef.elems, ext)(a)
+      def unapply(req: RequestHeader): Option[() => Out] =
+        if(basic(req)) PathMatcher1.unapply(routeDef.elems, splitPath(req.path), f1) else None
+      def args = List(implicitly[Manifest[A]])
+    }
+
+    object PathMatcher1 {
+      def apply[A](elems: List[PathElem], ext: Option[String], prefix: List[PathElem] = Nil)(a: A)(implicit ppa: PathParam[A]): String = elems match {
+        case Static(x) :: rest => apply(rest, ext, prefix :+ Static(x))(a)
+        case * :: rest => PathMatcher0(prefix ::: Static(ppa(a)) :: rest, ext)()
+        case _ => PathMatcher0(elems, ext)()
+      }
+      def unapply[A](elems: List[PathElem], parts: List[String], handler: (A) => Out)(implicit ppa: PathParam[A]): Option[() => Out] = (elems, parts) match {
+        case (Static(x) :: xs, y :: ys) if x == y => unapply(xs, ys, handler)
+        case (* :: xs, ppa(a) :: ys) => PathMatcher0.unapply(xs, ys, () => handler(a))
+        case (** :: xs, ys) => ppa.unapply(ys.mkString("/", "/", "")).map { a => () => handler(a) }
         case _ => None
       }
     }
 
-    def resolvePath3[A : ParamMatcher, B : ParamMatcher, C : ParamMatcher](parts: List[PathElem], in: In, fun: (A,B,C) => Out): Option[() => Out] = {
-      val pm1 = implicitly[ParamMatcher[A]]
-      (in.headOption, parts) match {
-        case (Some(first), Static(name) :: rest) if name == first => resolvePath3(rest, in.drop(1), fun)
-        case (Some(pm1(a)), * :: rest) => resolvePath2(rest, in.drop(1), (b: B, c: C) => fun(a,b,c))
-        case (Some(first), ** :: rest) => join(in) match {
-          case pm1(a) => resolvePath2(Nil, Array(), (b: B, c: C) => fun(a,b,c))
-          case _ => None
-        }
+    case class RouteDef2(method: Method, elems: List[PathElem], ext: Option[String] = None) extends RouteDef[RouteDef2]{
+      def /(static: Static) = RouteDef2(method, elems :+ static)
+      def /(p: PathElem) = RouteDef3(method, elems :+ p)
+      def to[A: PathParam : Manifest, B: PathParam : Manifest](f2: (A, B) => Out) = addRoute(Route2(this.copy(elems = currentNamespace ::: elems), f2))
+      def withMethod(method: Method) = RouteDef2(method, elems)
+      def as(ext: String) = RouteDef2(method, elems, Some(ext))
+    }
+
+    case class Route2[A: PathParam : Manifest, B: PathParam : Manifest](routeDef: RouteDef2, f2: (A, B) => Out) extends Route[RouteDef2] {
+      def apply(a: A, b: B, ext: Option[String] = routeDef.ext) = PathMatcher2(routeDef.elems, ext)(a, b)
+      def unapply(req: RequestHeader): Option[() => Out] =
+        if(basic(req)) PathMatcher2.unapply(routeDef.elems, splitPath(req.path), f2) else None
+      def args = List(implicitly[Manifest[A]], implicitly[Manifest[B]])
+    }
+
+    object PathMatcher2 {
+      def apply[A, B](elems: List[PathElem], ext: Option[String], prefix: List[PathElem] = Nil)(a: A, b: B)(implicit ppa: PathParam[A], ppb: PathParam[B]): String = elems match {
+        case Static(x) :: rest => apply(rest, ext, prefix :+ Static(x))(a, b)
+        case * :: rest => PathMatcher1(prefix ::: Static(ppa(a)) :: rest, ext)(b)
+        case _ => PathMatcher0(elems, ext)()
+      }
+      def unapply[A, B](elems: List[PathElem], parts: List[String], handler: (A, B) => Out)(implicit ppa: PathParam[A], ppb: PathParam[B]): Option[() => Out] = (elems, parts) match {
+        case (Static(x) :: xs, y :: ys) if x == y => unapply(xs, ys, handler)
+        case (* :: xs, ppa(a) :: ys) => PathMatcher1.unapply(xs, ys, (b: B) => handler(a, b))
         case _ => None
       }
     }
 
-    def join(in: In) = in.mkString("/")
-  }
+    case class RouteDef3(method: Method, elems: List[PathElem], ext: Option[String] = None) extends RouteDef[RouteDef3]{
+      def /(static: Static) = RouteDef3(method, elems :+ static)
+      def /(p: PathElem) = RouteDef4(method, elems :+ p)
+      def to[A: PathParam : Manifest, B: PathParam : Manifest, C: PathParam : Manifest](f3: (A, B, C) => Out) = addRoute(Route3(this.copy(elems = currentNamespace ::: elems), f3))
+      def withMethod(method: Method) = RouteDef3(method, elems)
+      def as(ext: String) = RouteDef3(method, elems, Some(ext))
+    }
 
-  sealed trait Route {
-    def path: BasicRoutePath
-    def matches(method: String, parts: Array[String]): Option[() => Out] = {
-      if(path.method.toString == method) {
-        path.ext map { ext =>
-            for {
-              last <- parts.lastOption
-              lastSplitted = last.split("\\.")
-              urlext <- lastSplitted.lastOption
-              if ext == urlext
-              matched <- matchPath(parts.dropRight(1) :+ lastSplitted.dropRight(1).mkString("."))
-            } yield matched
-        } getOrElse matchPath(parts)
-      } else {
-        None
+    case class Route3[A: PathParam : Manifest, B: PathParam : Manifest, C: PathParam : Manifest](routeDef: RouteDef3, f3: (A, B, C) => Out) extends Route[RouteDef3] {
+      def apply(a: A, b: B, c: C, ext: Option[String] = routeDef.ext) = PathMatcher3(routeDef.elems, ext)(a, b, c)
+      def unapply(req: RequestHeader): Option[() => Out] =
+        if(basic(req)) PathMatcher3.unapply(routeDef.elems, splitPath(req.path), f3) else None
+      def args = List(implicitly[Manifest[A]], implicitly[Manifest[B]], implicitly[Manifest[C]])
+    }
+
+    object PathMatcher3 {
+      def apply[A, B, C](elems: List[PathElem], ext: Option[String], prefix: List[PathElem] = Nil)(a: A, b: B, c: C)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C]): String = elems match {
+        case Static(x) :: rest => apply(rest, ext, prefix :+ Static(x))(a, b, c)
+        case * :: rest => PathMatcher2(prefix ::: Static(ppa(a)) :: rest, ext)(b, c)
+        case _ => PathMatcher0(elems, ext)()
       }
-    }
-    def args: List[scala.reflect.Manifest[_]]
-    def matchPath(in: In): Option[() => Out]
-
-    def createPath(args: List[String]) = (("", args) /: path.parts){
-      case ((res, x :: xs), *) => (res + "/" + x, xs)
-      case ((res, xs), e) => (res + "/" + e.toString, xs)
-    }._1
-  }
-
-  case class Route0(path: RoutePath0, fun: () => Out) extends Route {
-    def apply() = createPath(Nil)
-    def matchPath(in: In) = Resolver.resolvePath0(path.parts, in, fun)
-    def args = Nil
-  }
-
-  case class Route1[A : ParamMatcher : Manifest](path: RoutePath1, fun: A => Out) extends Route {
-    def apply(a: A) = createPath(a.toString :: Nil)
-    def matchPath(in: In) = Resolver.resolvePath1(path.parts, in, fun)
-    def args = manifest[A] :: Nil
-  }
-
-  case class Route2[A : ParamMatcher : Manifest, B : ParamMatcher : Manifest](path: RoutePath2, fun: (A,B) => Out) extends Route {
-    def apply(a: A, b: B) = createPath(a.toString :: b.toString :: Nil)
-    def matchPath(in: In) = Resolver.resolvePath2(path.parts, in, fun)
-    def args = manifest[A] :: manifest[B] :: Nil
-  }
-
-  case class Route3[A : ParamMatcher : Manifest, B : ParamMatcher : Manifest, C : ParamMatcher : Manifest](path: RoutePath3, fun: (A,B,C) => Out) extends Route {
-    def apply(a: A, b: B, c: C) = createPath(a.toString :: b.toString :: c.toString :: Nil)
-    def matchPath(in: In) = Resolver.resolvePath3(path.parts, in, fun)
-    def args = List(manifest[A], manifest[B], manifest[C])
-  }
-
-  lazy val _documentation = navigatorRoutes.map { route =>
-
-    val (parts, _) = ((List[String](), route.args) /: route.path.parts){
-      case ((res, x :: xs), *) => (res :+ ("[" + x + "]"), xs)
-      case ((res, xs), e) => (res :+ e.toString, xs)
-    }
-
-    (route.path.method.toString, parts.mkString("/", "/", "") + route.path.extString, route.args.mkString("(", ", ", ")"))
-  }
-
-  trait ResourcesRouting[T] {
-    val index: Route0
-    val `new`: Route0
-    val create: Route0
-    val show: Route1[T]
-    val edit: Route1[T]
-    val update: Route1[T]
-    val delete: Route1[T]
-  }
-
-  // namespace
-  protected val namespaceStack = new collection.mutable.Stack[Static]
-  def currentNamespace = namespaceStack.toList.reverse
-  def namespace(path: Static)(f: => Unit) = {
-    namespaceStack push path
-    f
-    namespaceStack.pop
-  }
-
-  class Namespace(path: Static) extends DelayedInit {
-    def delayedInit(body: => Unit) = namespace(path)(body)
-  }
-
-
-  // resources
-  def resources[T : ParamMatcher : Manifest](name: String, controller: Resources[T, Out]) = new ResourcesRouting[T] {
-    val index  = GET     on name               to controller.index
-    val `new`  = GET     on name / "new"       to controller.`new`
-    val create = POST    on name               to controller.create
-    val show   = GET     on name / *           to controller.show
-    val edit   = GET     on name / * / "edit"  to controller.edit
-    val update = PUT     on name / *           to controller.update
-    val delete = DELETE  on name / *           to controller.delete
-  }
-}
-
-trait Resources[T, Out] {
-  def index(): Out
-  def `new`(): Out
-  def create(): Out
-  def show(id: T): Out
-  def edit(id: T): Out
-  def update(id: T): Out
-  def delete(id: T): Out
-}
-
-
-trait PlayResources[T] extends Resources[T, Handler]
-
-trait PlayNavigator extends Navigator[Handler] {
-  def redirect(url: String, status: Int = controllers.Default.SEE_OTHER) = () => Action { controllers.Default.Redirect(url, status) }
-
-  def documentation = _documentation
-
-  def routes = new PartialFunction[RequestHeader, Handler] {
-    private var _lastHandler: () => Handler = null // this one sucks a lot
-
-    def isDefinedAt(req: RequestHeader) = {
-        // documentation foreach println
-
-      val parts = req.path.split("/").dropWhile(_ == "")
-      navigatorRoutes.view.map(_.matches(req.method, parts)).collectFirst { case Some(e) => e } match {
-        case Some(handler) =>
-          _lastHandler = handler
-          true
-        case None =>
-          false
+      def unapply[A, B, C](elems: List[PathElem], parts: List[String], handler: (A, B, C) => Out)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C]): Option[() => Out] = (elems, parts) match {
+        case (Static(x) :: xs, y :: ys) if x == y => unapply(xs, ys, handler)
+        case (* :: xs, ppa(a) :: ys) => PathMatcher2.unapply(xs, ys, (b: B, c: C) => handler(a, b, c))
+        case _ => None
       }
     }
 
-    def apply(req: RequestHeader) = _lastHandler()
-  }
-}
+    case class RouteDef4(method: Method, elems: List[PathElem], ext: Option[String] = None) extends RouteDef[RouteDef4]{
+      def /(static: Static) = RouteDef4(method, elems :+ static)
+      def /(p: PathElem) = RouteDef5(method, elems :+ p)
+      def to[A: PathParam : Manifest, B: PathParam : Manifest, C: PathParam : Manifest, D: PathParam : Manifest](f4: (A, B, C, D) => Out) = addRoute(Route4(this.copy(elems = currentNamespace ::: elems), f4))
+      def withMethod(method: Method) = RouteDef4(method, elems)
+      def as(ext: String) = RouteDef4(method, elems, Some(ext))
+    }
 
+    case class Route4[A: PathParam : Manifest, B: PathParam : Manifest, C: PathParam : Manifest, D: PathParam : Manifest](routeDef: RouteDef4, f4: (A, B, C, D) => Out) extends Route[RouteDef4] {
+      def apply(a: A, b: B, c: C, d: D, ext: Option[String] = routeDef.ext) = PathMatcher4(routeDef.elems, ext)(a, b, c, d)
+      def unapply(req: RequestHeader): Option[() => Out] =
+        if(basic(req)) PathMatcher4.unapply(routeDef.elems, splitPath(req.path), f4) else None
+      def args = List(implicitly[Manifest[A]], implicitly[Manifest[B]], implicitly[Manifest[C]], implicitly[Manifest[D]])
+    }
+
+    object PathMatcher4 {
+      def apply[A, B, C, D](elems: List[PathElem], ext: Option[String], prefix: List[PathElem] = Nil)(a: A, b: B, c: C, d: D)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C], ppd: PathParam[D]): String = elems match {
+        case Static(x) :: rest => apply(rest, ext, prefix :+ Static(x))(a, b, c, d)
+        case * :: rest => PathMatcher3(prefix ::: Static(ppa(a)) :: rest, ext)(b, c, d)
+        case _ => PathMatcher0(elems, ext)()
+      }
+      def unapply[A, B, C, D](elems: List[PathElem], parts: List[String], handler: (A, B, C, D) => Out)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C], ppd: PathParam[D]): Option[() => Out] = (elems, parts) match {
+        case (Static(x) :: xs, y :: ys) if x == y => unapply(xs, ys, handler)
+        case (* :: xs, ppa(a) :: ys) => PathMatcher3.unapply(xs, ys, (b: B, c: C, d: D) => handler(a, b, c, d))
+        case _ => None
+      }
+    }
+
+    case class RouteDef5(method: Method, elems: List[PathElem], ext: Option[String] = None) extends RouteDef[RouteDef5]{
+      def /(static: Static) = RouteDef5(method, elems :+ static)
+      def /(p: PathElem) = RouteDef6(method, elems :+ p)
+      def to[A: PathParam : Manifest, B: PathParam : Manifest, C: PathParam : Manifest, D: PathParam : Manifest, E: PathParam : Manifest](f5: (A, B, C, D, E) => Out) = addRoute(Route5(this.copy(elems = currentNamespace ::: elems), f5))
+      def withMethod(method: Method) = RouteDef5(method, elems)
+      def as(ext: String) = RouteDef5(method, elems, Some(ext))
+    }
+
+    case class Route5[A: PathParam : Manifest, B: PathParam : Manifest, C: PathParam : Manifest, D: PathParam : Manifest, E: PathParam : Manifest](routeDef: RouteDef5, f5: (A, B, C, D, E) => Out) extends Route[RouteDef5] {
+      def apply(a: A, b: B, c: C, d: D, e: E, ext: Option[String] = routeDef.ext) = PathMatcher5(routeDef.elems, ext)(a, b, c, d, e)
+      def unapply(req: RequestHeader): Option[() => Out] =
+        if(basic(req)) PathMatcher5.unapply(routeDef.elems, splitPath(req.path), f5) else None
+      def args = List(implicitly[Manifest[A]], implicitly[Manifest[B]], implicitly[Manifest[C]], implicitly[Manifest[D]], implicitly[Manifest[E]])
+    }
+
+    object PathMatcher5 {
+      def apply[A, B, C, D, E](elems: List[PathElem], ext: Option[String], prefix: List[PathElem] = Nil)(a: A, b: B, c: C, d: D, e: E)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C], ppd: PathParam[D], ppe: PathParam[E]): String = elems match {
+        case Static(x) :: rest => apply(rest, ext, prefix :+ Static(x))(a, b, c, d, e)
+        case * :: rest => PathMatcher4(prefix ::: Static(ppa(a)) :: rest, ext)(b, c, d, e)
+        case _ => PathMatcher0(elems, ext)()
+      }
+      def unapply[A, B, C, D, E](elems: List[PathElem], parts: List[String], handler: (A, B, C, D, E) => Out)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C], ppd: PathParam[D], ppe: PathParam[E]): Option[() => Out] = (elems, parts) match {
+        case (Static(x) :: xs, y :: ys) if x == y => unapply(xs, ys, handler)
+        case (* :: xs, ppa(a) :: ys) => PathMatcher4.unapply(xs, ys, (b: B, c: C, d: D, e: E) => handler(a, b, c, d, e))
+        case _ => None
+      }
+    }
+
+    case class RouteDef6(method: Method, elems: List[PathElem], ext: Option[String] = None) extends RouteDef[RouteDef6]{
+      def /(static: Static) = RouteDef6(method, elems :+ static)
+      // def /(p: PathElem) = RouteDef7(method, elems :+ p)
+      def to[A: PathParam : Manifest, B: PathParam : Manifest, C: PathParam : Manifest, D: PathParam : Manifest, E: PathParam : Manifest, F: PathParam : Manifest](f6: (A, B, C, D, E, F) => Out) = addRoute(Route6(this.copy(elems = currentNamespace ::: elems), f6))
+      def withMethod(method: Method) = RouteDef6(method, elems)
+      def as(ext: String) = RouteDef6(method, elems, Some(ext))
+    }
+
+    case class Route6[A: PathParam : Manifest, B: PathParam : Manifest, C: PathParam : Manifest, D: PathParam : Manifest, E: PathParam : Manifest, F: PathParam : Manifest](routeDef: RouteDef6, f6: (A, B, C, D, E, F) => Out) extends Route[RouteDef6] {
+      def apply(a: A, b: B, c: C, d: D, e: E, f: F, ext: Option[String] = routeDef.ext) = PathMatcher6(routeDef.elems, ext)(a, b, c, d, e, f)
+      def unapply(req: RequestHeader): Option[() => Out] =
+        if(basic(req)) PathMatcher6.unapply(routeDef.elems, splitPath(req.path), f6) else None
+      def args = List(implicitly[Manifest[A]], implicitly[Manifest[B]], implicitly[Manifest[C]], implicitly[Manifest[D]], implicitly[Manifest[E]], implicitly[Manifest[F]])
+    }
+
+    object PathMatcher6 {
+      def apply[A, B, C, D, E, F](elems: List[PathElem], ext: Option[String], prefix: List[PathElem] = Nil)(a: A, b: B, c: C, d: D, e: E, f: F)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C], ppd: PathParam[D], ppe: PathParam[E], ppf: PathParam[F]): String = elems match {
+        case Static(x) :: rest => apply(rest, ext, prefix :+ Static(x))(a, b, c, d, e, f)
+        case * :: rest => PathMatcher5(prefix ::: Static(ppa(a)) :: rest, ext)(b, c, d, e, f)
+        case _ => PathMatcher0(elems, ext)()
+      }
+      def unapply[A, B, C, D, E, F](elems: List[PathElem], parts: List[String], handler: (A, B, C, D, E, F) => Out)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C], ppd: PathParam[D], ppe: PathParam[E], ppf: PathParam[F]): Option[() => Out] = (elems, parts) match {
+        case (Static(x) :: xs, y :: ys) if x == y => unapply(xs, ys, handler)
+        case (* :: xs, ppa(a) :: ys) => PathMatcher5.unapply(xs, ys, (b: B, c: C, d: D, e: E, f: F) => handler(a, b, c, d, e, f))
+        case _ => None
+      }
+    }
+
+
+
+
+
+
+
+
+    trait PathParam[T]{
+      def apply(t: T): String
+      def unapply(s: String): Option[T]
+    }
+
+    def silent[T](f: => T) = try { Some(f) } catch { case _ => None }
+    implicit val IntPathParam: PathParam[Int] = new PathParam[Int] {
+      def apply(i: Int) = i.toString
+      def unapply(s: String) = silent(s.toInt)
+    }
+
+    implicit val LongPathParam: PathParam[Long] = new PathParam[Long] {
+      def apply(l: Long) = l.toString
+      def unapply(s: String) = silent(s.toLong)
+    }
+
+    implicit val DoublePathParam: PathParam[Double] = new PathParam[Double] {
+      def apply(d: Double) = d.toString
+      def unapply(s: String) = silent(s.toDouble)
+    }
+
+    implicit val FloatPathParam: PathParam[Float] = new PathParam[Float] {
+      def apply(f: Float) = f.toString
+      def unapply(s: String) = silent(s.toFloat)
+    }
+
+    implicit val StringPathParam: PathParam[String] = new PathParam[String] {
+      def apply(s: String) = s
+      def unapply(s: String) = Some(s)
+    }
+
+    implicit val BooleanPathParam: PathParam[Boolean] = new PathParam[Boolean] {
+      def apply(b: Boolean) = b.toString
+      def unapply(s: String) = s.toLowerCase match {
+        case "1" | "true" | "yes" => Some(true)
+        case "0" | "false" | "no" => Some(false)
+        case _ => None
+      }
+    }
+
+
+
+    trait ResourcesRouting[T] {
+      val index: Route0
+      val `new`: Route0
+      val create: Route0
+      val show: Route1[T]
+      val edit: Route1[T]
+      val update: Route1[T]
+      val delete: Route1[T]
+    }
+
+    // resources
+    def resources[T : PathParam : Manifest](name: String, controller: Resources[T, Out]) = new ResourcesRouting[T] {
+      val index  = GET     on name               to controller.index
+      val `new`  = GET     on name / "new"       to controller.`new`
+      val create = POST    on name               to controller.create
+      val show   = GET     on name / *           to controller.show
+      val edit   = GET     on name / * / "edit"  to controller.edit
+      val update = PUT     on name / *           to controller.update
+      val delete = DELETE  on name / *           to controller.delete
+    }
+
+    // namespace
+    protected val namespaceStack = new collection.mutable.Stack[Static]
+    def currentNamespace = namespaceStack.toList.reverse
+    def namespace(path: Static)(f: => Unit) = {
+      namespaceStack push path
+      f
+      namespaceStack.pop
+    }
+
+    class Namespace(path: Static) extends DelayedInit {
+      def delayedInit(body: => Unit) = namespace(path)(body)
+    }
+  }
+
+  trait PlayNavigator extends Router.Routes with Navigator[Handler] {
+  //   def redirect(url: String, status: Int = controllers.Default.SEE_OTHER) = () => Action { controllers.Default.Redirect(url, status) }
+
+    def documentation = _documentation
+
+
+    lazy val _documentation = routesList.map { route =>
+
+      val (parts, _) = ((List[String](), route.args) /: route.routeDef.elems){
+        case ((res, x :: xs), *) => (res :+ ("[" + x + "]"), xs)
+        case ((res, xs), e) => (res :+ e.toString, xs)
+      }
+
+      (route.routeDef.method.toString, parts.mkString("/", "/", "") + route.routeDef.extString, route.args.mkString("(", ", ", ")"))
+    }
+
+    def routes = new PartialFunction[RequestHeader, Handler] {
+      private var _lastHandler: () => Handler = null // XXX: this one sucks a lot
+
+      def apply(req: RequestHeader) = _lastHandler()
+
+      def isDefinedAt(req: RequestHeader) = {
+        routesList.view.map(_.unapply(req)).collectFirst { case Some(e) => e }.map { r =>
+          _lastHandler = r // XXX: performance hack
+          r
+        }.isDefined
+      }
+    }
+  }
+
+  trait PlayResourcesController[T] extends Resources[T, Handler] with Controller
+}
