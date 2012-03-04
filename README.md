@@ -6,7 +6,7 @@ Add `play-navigator` to your `project/Build.scala` file
 
 ``` scala
 val appDependencies = Seq(
-  "eu.teamon" %% "play-navigator" % "0.1.0-SNAPSHOT"
+  "eu.teamon" %% "play-navigator" % "0.2.0-SNAPSHOT"
 )
 
 val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
@@ -21,7 +21,7 @@ Create new file `PROJECT_ROOT/app/Routes.scala`:
 ``` scala
 import play.navigator.PlayNavigator
 
-trait RoutesDefinition extends Router.Routes with PlayNavigator {
+trait RoutesDefinition extends PlayNavigator {
     // Your routes definition (see below)
 }
 
@@ -77,7 +77,7 @@ GET   on "showalt" / * to Application.show
 GET on "redirect-me" to redirect("http://google.com")
 ```
 
-`Application` and `Todos` controller used in example
+`Application` and `Todos` controllers used in example
 
 ``` scala
 // app/controllers/Application.scala
@@ -142,3 +142,43 @@ object Todos extends Controller with PlayResources[Int] {
 }
 
 ```
+
+
+## Mountable routers
+
+``` scala
+case class FirstModule(parent: PlayNavigator) extends PlayModule(parent) with Controller {
+  val home = GET on root to first.Application.index
+  val foobar = GET on "foo" / "bar" / * to first.Application.foo
+}
+
+case class SecondModule(parent: PlayNavigator) extends PlayModule(parent) with Controller {
+  val home = GET on root to (() => second.Application.index
+  val foobar = GET on "foo" / "bar" / * to second.Application.foo
+}
+
+// Main router
+trait RoutesDefinition extends PlayNavigator {
+    val first = "first" --> FirstModule
+    val second = "second" / "module" --> SecondModule
+}
+```
+
+Generated routes:
+
+```
+/first
+/first/foo/bar/*
+/second/module
+/second/module/foo/bar/*
+```
+
+and reverse routing:
+
+```
+routes.first.home() // => "/first"
+routes.first.foo(3) // => "/first/foo/bar/3"
+routes.second.home() // => "/second/module"
+routes.second.foo(3) // => "/second/module/foo/bar/3"
+```
+
