@@ -75,6 +75,10 @@ GET   on "showalt" / * to Application.show
 
 // redirect
 GET on "redirect-me" to redirect("http://google.com")
+
+// assets
+val assets = GET on "assets" / ** to { s: String => Assets.at(path="/public", s) }
+
 ```
 
 `Application` and `Todos` controllers used in example
