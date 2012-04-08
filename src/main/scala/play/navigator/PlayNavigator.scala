@@ -185,7 +185,7 @@ object navigator {
     object PathMatcher1 {
       def apply[A](elems: List[PathElem], ext: Option[String], prefix: List[PathElem] = Nil)(a: A)(implicit ppa: PathParam[A]): String = elems match {
         case Static(x) :: rest => apply(rest, ext, prefix :+ Static(x))(a)
-        case * :: rest => PathMatcher0(prefix ::: Static(ppa(a)) :: rest, ext)()
+        case (* | **) :: rest => PathMatcher0(prefix ::: Static(ppa(a)) :: rest, ext)()
         case _ => PathMatcher0(elems, ext)()
       }
       def unapply[A](elems: List[PathElem], parts: List[String], handler: (A) => Out)(implicit ppa: PathParam[A]): Option[() => Out] = (elems, parts) match {
@@ -214,7 +214,7 @@ object navigator {
     object PathMatcher2 {
       def apply[A, B](elems: List[PathElem], ext: Option[String], prefix: List[PathElem] = Nil)(a: A, b: B)(implicit ppa: PathParam[A], ppb: PathParam[B]): String = elems match {
         case Static(x) :: rest => apply(rest, ext, prefix :+ Static(x))(a, b)
-        case * :: rest => PathMatcher1(prefix ::: Static(ppa(a)) :: rest, ext)(b)
+        case (* | **) :: rest => PathMatcher1(prefix ::: Static(ppa(a)) :: rest, ext)(b)
         case _ => PathMatcher0(elems, ext)()
       }
       def unapply[A, B](elems: List[PathElem], parts: List[String], handler: (A, B) => Out)(implicit ppa: PathParam[A], ppb: PathParam[B]): Option[() => Out] = (elems, parts) match {
@@ -242,7 +242,7 @@ object navigator {
     object PathMatcher3 {
       def apply[A, B, C](elems: List[PathElem], ext: Option[String], prefix: List[PathElem] = Nil)(a: A, b: B, c: C)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C]): String = elems match {
         case Static(x) :: rest => apply(rest, ext, prefix :+ Static(x))(a, b, c)
-        case * :: rest => PathMatcher2(prefix ::: Static(ppa(a)) :: rest, ext)(b, c)
+        case (* | **) :: rest => PathMatcher2(prefix ::: Static(ppa(a)) :: rest, ext)(b, c)
         case _ => PathMatcher0(elems, ext)()
       }
       def unapply[A, B, C](elems: List[PathElem], parts: List[String], handler: (A, B, C) => Out)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C]): Option[() => Out] = (elems, parts) match {
@@ -270,7 +270,7 @@ object navigator {
     object PathMatcher4 {
       def apply[A, B, C, D](elems: List[PathElem], ext: Option[String], prefix: List[PathElem] = Nil)(a: A, b: B, c: C, d: D)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C], ppd: PathParam[D]): String = elems match {
         case Static(x) :: rest => apply(rest, ext, prefix :+ Static(x))(a, b, c, d)
-        case * :: rest => PathMatcher3(prefix ::: Static(ppa(a)) :: rest, ext)(b, c, d)
+        case (* | **) :: rest => PathMatcher3(prefix ::: Static(ppa(a)) :: rest, ext)(b, c, d)
         case _ => PathMatcher0(elems, ext)()
       }
       def unapply[A, B, C, D](elems: List[PathElem], parts: List[String], handler: (A, B, C, D) => Out)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C], ppd: PathParam[D]): Option[() => Out] = (elems, parts) match {
@@ -298,7 +298,7 @@ object navigator {
     object PathMatcher5 {
       def apply[A, B, C, D, E](elems: List[PathElem], ext: Option[String], prefix: List[PathElem] = Nil)(a: A, b: B, c: C, d: D, e: E)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C], ppd: PathParam[D], ppe: PathParam[E]): String = elems match {
         case Static(x) :: rest => apply(rest, ext, prefix :+ Static(x))(a, b, c, d, e)
-        case * :: rest => PathMatcher4(prefix ::: Static(ppa(a)) :: rest, ext)(b, c, d, e)
+        case (* | **) :: rest => PathMatcher4(prefix ::: Static(ppa(a)) :: rest, ext)(b, c, d, e)
         case _ => PathMatcher0(elems, ext)()
       }
       def unapply[A, B, C, D, E](elems: List[PathElem], parts: List[String], handler: (A, B, C, D, E) => Out)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C], ppd: PathParam[D], ppe: PathParam[E]): Option[() => Out] = (elems, parts) match {
@@ -326,7 +326,7 @@ object navigator {
     object PathMatcher6 {
       def apply[A, B, C, D, E, F](elems: List[PathElem], ext: Option[String], prefix: List[PathElem] = Nil)(a: A, b: B, c: C, d: D, e: E, f: F)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C], ppd: PathParam[D], ppe: PathParam[E], ppf: PathParam[F]): String = elems match {
         case Static(x) :: rest => apply(rest, ext, prefix :+ Static(x))(a, b, c, d, e, f)
-        case * :: rest => PathMatcher5(prefix ::: Static(ppa(a)) :: rest, ext)(b, c, d, e, f)
+        case (* | **) :: rest => PathMatcher5(prefix ::: Static(ppa(a)) :: rest, ext)(b, c, d, e, f)
         case _ => PathMatcher0(elems, ext)()
       }
       def unapply[A, B, C, D, E, F](elems: List[PathElem], parts: List[String], handler: (A, B, C, D, E, F) => Out)(implicit ppa: PathParam[A], ppb: PathParam[B], ppc: PathParam[C], ppd: PathParam[D], ppe: PathParam[E], ppf: PathParam[F]): Option[() => Out] = (elems, parts) match {

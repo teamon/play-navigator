@@ -28,6 +28,7 @@ class ReverseRoutingSpec extends Specification {
 
     "catchall" in {
       catchall === Route1(RouteDef1(GET, List(Static("catchall"), **)), fun1)
+      catchall("foo/bar/baz") === "/catchall/foo/bar/baz"
     }
 
     "extensions" in {
