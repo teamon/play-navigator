@@ -1,0 +1,7 @@
+language: scala
+scala:
+  - 2.9.1
+env:
+  - PLAY_VERSION=2.0
+  - PLAY_VERSION=2.0.1
+  - PLAY_VERSION=2.1-SNAPSHOT
