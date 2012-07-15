@@ -6,7 +6,7 @@ Add `play-navigator` to your `project/Build.scala` file
 
 ``` scala
 val appDependencies = Seq(
-  "eu.teamon" %% "play-navigator" % "0.2.0-SNAPSHOT"
+  "eu.teamon" %% "play-navigator" % "0.3.0"
 )
 
 val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
@@ -14,24 +14,41 @@ val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).s
 )
 ```
 
-Delete `conf/routes` file
+Delete `conf/routes` file (optional in 0.3.0, you can use both)
 
-Create new file `PROJECT_ROOT/app/Routes.scala`:
+Create new file `PROJECT_ROOT/app/controllers/nav.scala`:
 
 ``` scala
+package controllers
+
 import play.navigator.PlayNavigator
 
-trait RoutesDefinition extends PlayNavigator {
+object nav extends PlayNavigator {
     // Your routes definition (see below)
 }
+```
 
+Your `app/Global.scala` should look like this
 
-// Below lines are very IMPORTANT
-package controllers {
-    object routes extends RoutesDefinition
+``` scala
+import play.api._
+import play.api.mvc._
+
+object Global extends GlobalSettings {
+
+  override def onRouteRequest(request: RequestHeader) = {
+    controllers.nav.onRouteRequest(request) // handle requests with play-navigator
+
+    // optionally you can fallback to standard Play routes with
+    // controllers.nav.onRouteRequest(request) orElse super.onRouteRequest(request)
+  }
+
+  override def onHandlerNotFound(request: RequestHeader) = {
+    controllers.nav.onHandlerNotFound(request) // display 404 page with routes documentation
+  }
+
 }
 
-object Routes extends RoutesDefinition
 ```
 
 ## Routes definition
@@ -136,13 +153,13 @@ import play.api.mvc._
 import navigator._
 
 object Todos extends Controller with PlayResources[Int] {
-  def index() = Action { Ok("Todos.index => %s" format routes.todos.index()) }
-  def `new`() = Action { Ok("Todos.new => %s" format routes.todos.`new`()) }
-  def create() = Action { Ok("Todos.create => %s" format routes.todos.create()) }
-  def show(id: Int) = Action { Ok("Todos.show(%d) => %s" format (id, routes.todos.show(id))) }
-  def edit(id: Int) = Action { Ok("Todos.edit(%d) => %s" format (id, routes.todos.edit(id))) }
-  def update(id: Int) = Action { Ok("Todos.update(%d) => %s" format (id, routes.todos.update(id))) }
-  def delete(id: Int) = Action { Ok("Todos.delete(%d) => %s" format (id, routes.todos.delete(id))) }
+  def index() = Action { Ok("Todos.index => %s" format nav.todos.index()) }
+  def `new`() = Action { Ok("Todos.new => %s" format nav.todos.`new`()) }
+  def create() = Action { Ok("Todos.create => %s" format nav.todos.create()) }
+  def show(id: Int) = Action { Ok("Todos.show(%d) => %s" format (id, nav.todos.show(id))) }
+  def edit(id: Int) = Action { Ok("Todos.edit(%d) => %s" format (id, nav.todos.edit(id))) }
+  def update(id: Int) = Action { Ok("Todos.update(%d) => %s" format (id, nav.todos.update(id))) }
+  def delete(id: Int) = Action { Ok("Todos.delete(%d) => %s" format (id, nav.todos.delete(id))) }
 }
 
 ```
@@ -162,7 +179,7 @@ case class SecondModule(parent: PlayNavigator) extends PlayModule(parent) with C
 }
 
 // Main router
-trait RoutesDefinition extends PlayNavigator {
+object nav extends PlayNavigator {
     val first = "first" --> FirstModule
     val second = "second" / "module" --> SecondModule
 }
@@ -180,9 +197,9 @@ Generated routes:
 and reverse routing:
 
 ```
-routes.first.home() // => "/first"
-routes.first.foo(3) // => "/first/foo/bar/3"
-routes.second.home() // => "/second/module"
-routes.second.foo(3) // => "/second/module/foo/bar/3"
+nav.first.home() // => "/first"
+nav.first.foo(3) // => "/first/foo/bar/3"
+nav.second.home() // => "/second/module"
+nav.second.foo(3) // => "/second/module/foo/bar/3"
 ```
 

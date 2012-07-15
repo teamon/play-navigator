@@ -1,6 +1,8 @@
 package play
 
+import play.api.Mode
 import play.api.mvc._
+import play.api.mvc.Results.NotFound
 import play.core.Router
 
 
@@ -25,7 +27,7 @@ object navigator {
     def delete(id: T): Out
   }
 
-  trait PlayNavigator extends Router.Routes {
+  trait PlayNavigator {
     val self = this
 
     def routesList = _routesList.toList
@@ -49,6 +51,17 @@ object navigator {
       (route.routeDef.method.toString, parts.mkString("/", "/", "") + route.routeDef.extString, route.args.mkString("(", ", ", ")"))
     }
 
+    def onRouteRequest(request: RequestHeader) = {
+      routes.lift(request)
+    }
+
+    def onHandlerNotFound(request: RequestHeader) = {
+      NotFound(play.api.Play.maybeApplication.map {
+        case app if app.mode == Mode.Dev => views.html.defaultpages.devNotFound.f
+        case app => views.html.defaultpages.notFound.f
+      }.getOrElse(views.html.defaultpages.devNotFound.f)(request, Some(router)))
+    }
+
     def routes = new PartialFunction[RequestHeader, Handler] {
       private var _lastHandler: () => Handler = null // XXX: this one sucks a lot
 
@@ -62,6 +75,11 @@ object navigator {
       }
     }
 
+    // Provider for Play's 404 dev page
+    val router = new play.core.Router.Routes {
+      def documentation = (("###", "play-navigator routes", "") +: _documentation) ++ play.api.Play.maybeApplication.flatMap(_.routes.map(r => ("###", "play standard routes (in conf/routes file)", "") +: r.documentation)).getOrElse(Nil)
+      def routes = routes
+    }
 
 
     sealed trait Method {
