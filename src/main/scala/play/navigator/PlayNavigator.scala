@@ -149,7 +149,7 @@ object navigator {
     }
 
     case class Route0(routeDef: RouteDef0, f0: () => Out) extends Route[RouteDef0] {
-      def apply(ext: Option[String] = routeDef.ext) = PathMatcher0(routeDef.elems, ext)()
+      def apply(ext: Option[String] = routeDef.ext) = Call(routeDef.method.toString, PathMatcher0(routeDef.elems, ext)())
       def unapply(req: RequestHeader): Option[() => Out] =
         if(basic(req)) PathMatcher0.unapply(routeDef.elems, splitPath(req.path), f0) else None
       def args = Nil
@@ -197,7 +197,7 @@ object navigator {
     }
 
     case class Route1[A: PathParam : Manifest](routeDef: RouteDef1, f1: (A) => Out) extends Route[RouteDef1] {
-      def apply(a: A, ext: Option[String] = routeDef.ext) = PathMatcher1(routeDef.elems, ext)(a)
+      def apply(a: A, ext: Option[String] = routeDef.ext) = Call(routeDef.method.toString, PathMatcher1(routeDef.elems, ext)(a))
       def unapply(req: RequestHeader): Option[() => Out] =
         if(basic(req)) PathMatcher1.unapply(routeDef.elems, splitPath(req.path), f1) else None
       def args = List(implicitly[Manifest[A]])
@@ -226,7 +226,7 @@ object navigator {
     }
 
     case class Route2[A: PathParam : Manifest, B: PathParam : Manifest](routeDef: RouteDef2, f2: (A, B) => Out) extends Route[RouteDef2] {
-      def apply(a: A, b: B, ext: Option[String] = routeDef.ext) = PathMatcher2(routeDef.elems, ext)(a, b)
+      def apply(a: A, b: B, ext: Option[String] = routeDef.ext) = Call(routeDef.method.toString, PathMatcher2(routeDef.elems, ext)(a, b))
       def unapply(req: RequestHeader): Option[() => Out] =
         if(basic(req)) PathMatcher2.unapply(routeDef.elems, splitPath(req.path), f2) else None
       def args = List(implicitly[Manifest[A]], implicitly[Manifest[B]])
@@ -254,7 +254,7 @@ object navigator {
     }
 
     case class Route3[A: PathParam : Manifest, B: PathParam : Manifest, C: PathParam : Manifest](routeDef: RouteDef3, f3: (A, B, C) => Out) extends Route[RouteDef3] {
-      def apply(a: A, b: B, c: C, ext: Option[String] = routeDef.ext) = PathMatcher3(routeDef.elems, ext)(a, b, c)
+      def apply(a: A, b: B, c: C, ext: Option[String] = routeDef.ext) = Call(routeDef.method.toString, PathMatcher3(routeDef.elems, ext)(a, b, c))
       def unapply(req: RequestHeader): Option[() => Out] =
         if(basic(req)) PathMatcher3.unapply(routeDef.elems, splitPath(req.path), f3) else None
       def args = List(implicitly[Manifest[A]], implicitly[Manifest[B]], implicitly[Manifest[C]])
@@ -282,7 +282,7 @@ object navigator {
     }
 
     case class Route4[A: PathParam : Manifest, B: PathParam : Manifest, C: PathParam : Manifest, D: PathParam : Manifest](routeDef: RouteDef4, f4: (A, B, C, D) => Out) extends Route[RouteDef4] {
-      def apply(a: A, b: B, c: C, d: D, ext: Option[String] = routeDef.ext) = PathMatcher4(routeDef.elems, ext)(a, b, c, d)
+      def apply(a: A, b: B, c: C, d: D, ext: Option[String] = routeDef.ext) = Call(routeDef.method.toString, PathMatcher4(routeDef.elems, ext)(a, b, c, d))
       def unapply(req: RequestHeader): Option[() => Out] =
         if(basic(req)) PathMatcher4.unapply(routeDef.elems, splitPath(req.path), f4) else None
       def args = List(implicitly[Manifest[A]], implicitly[Manifest[B]], implicitly[Manifest[C]], implicitly[Manifest[D]])
@@ -310,7 +310,7 @@ object navigator {
     }
 
     case class Route5[A: PathParam : Manifest, B: PathParam : Manifest, C: PathParam : Manifest, D: PathParam : Manifest, E: PathParam : Manifest](routeDef: RouteDef5, f5: (A, B, C, D, E) => Out) extends Route[RouteDef5] {
-      def apply(a: A, b: B, c: C, d: D, e: E, ext: Option[String] = routeDef.ext) = PathMatcher5(routeDef.elems, ext)(a, b, c, d, e)
+      def apply(a: A, b: B, c: C, d: D, e: E, ext: Option[String] = routeDef.ext) = Call(routeDef.method.toString, PathMatcher5(routeDef.elems, ext)(a, b, c, d, e))
       def unapply(req: RequestHeader): Option[() => Out] =
         if(basic(req)) PathMatcher5.unapply(routeDef.elems, splitPath(req.path), f5) else None
       def args = List(implicitly[Manifest[A]], implicitly[Manifest[B]], implicitly[Manifest[C]], implicitly[Manifest[D]], implicitly[Manifest[E]])
@@ -338,7 +338,7 @@ object navigator {
     }
 
     case class Route6[A: PathParam : Manifest, B: PathParam : Manifest, C: PathParam : Manifest, D: PathParam : Manifest, E: PathParam : Manifest, F: PathParam : Manifest](routeDef: RouteDef6, f6: (A, B, C, D, E, F) => Out) extends Route[RouteDef6] {
-      def apply(a: A, b: B, c: C, d: D, e: E, f: F, ext: Option[String] = routeDef.ext) = PathMatcher6(routeDef.elems, ext)(a, b, c, d, e, f)
+      def apply(a: A, b: B, c: C, d: D, e: E, f: F, ext: Option[String] = routeDef.ext) = Call(routeDef.method.toString, PathMatcher6(routeDef.elems, ext)(a, b, c, d, e, f))
       def unapply(req: RequestHeader): Option[() => Out] =
         if(basic(req)) PathMatcher6.unapply(routeDef.elems, splitPath(req.path), f6) else None
       def args = List(implicitly[Manifest[A]], implicitly[Manifest[B]], implicitly[Manifest[C]], implicitly[Manifest[D]], implicitly[Manifest[E]], implicitly[Manifest[F]])
