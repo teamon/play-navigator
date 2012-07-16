@@ -76,9 +76,12 @@ object navigator {
     }
 
     // Provider for Play's 404 dev page
+    // This object is used ONLY for displaying routes documentation
     val router = new play.core.Router.Routes {
       def documentation = (("###", "play-navigator routes", "") +: _documentation) ++ play.api.Play.maybeApplication.flatMap(_.routes.map(r => ("###", "play standard routes (in conf/routes file)", "") +: r.documentation)).getOrElse(Nil)
       def routes = routes
+      def prefix = ""
+      def setPrefix(prefix: String) {}
     }
 
 

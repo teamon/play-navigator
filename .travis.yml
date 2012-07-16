@@ -1,6 +1,8 @@
 language: scala
 scala:
   - 2.9.1
+  - 2.9.1-1
+  - 2.9.2
 env:
   - PLAY_VERSION=2.0
   - PLAY_VERSION=2.0.1
