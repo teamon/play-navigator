@@ -21,7 +21,7 @@ Create new file `PROJECT_ROOT/app/controllers/nav.scala`:
 ``` scala
 package controllers
 
-import play.navigator.PlayNavigator
+import play.navigator._
 
 object nav extends PlayNavigator {
     // Your routes definition (see below)
