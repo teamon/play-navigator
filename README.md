@@ -8,7 +8,7 @@ Add `play-navigator` to your `project/Build.scala` file
 
 ``` scala
 val appDependencies = Seq(
-  "eu.teamon" %% "play-navigator" % "0.3.0"
+  "eu.teamon" %% "play-navigator" % "0.3.1"
 )
 
 val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
@@ -16,7 +16,7 @@ val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).s
 )
 ```
 
-Delete `conf/routes` file (optional in 0.3.0, you can use both)
+Delete `conf/routes` file (optional since 0.3.0, you can use both)
 
 Create new file `PROJECT_ROOT/app/controllers/nav.scala`:
 
