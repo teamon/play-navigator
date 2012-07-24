@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Play-navigator : Better router for Play Framework 2.0" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Play-navigator</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/teamon/play-navigator">View on GitHub</a>
+
+          <h1 id="project_title">Play-navigator</h1>
+          <h2 id="project_tagline">Better router for Play Framework 2.0</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/teamon/play-navigator/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/teamon/play-navigator/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h2>Better router for Play Framework 2.0</h2>
+
+<p>The "why" and "how" - <a href="http://codetunes.com/2012/05/09/scala-dsl-tutorial-writing-web-framework-router">http://codetunes.com/2012/05/09/scala-dsl-tutorial-writing-web-framework-router</a></p>
+
+<h2>Installation</h2>
+
+<p>Add <code>play-navigator</code> to your <code>project/Build.scala</code> file</p>
+
+<div class="highlight"><pre><span class="k">val</span> <span class="n">appDependencies</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
+  <span class="s">"eu.teamon"</span> <span class="o">%%</span> <span class="s">"play-navigator"</span> <span class="o">%</span> <span class="s">"0.3.1"</span>
+<span class="o">)</span>
+
+<span class="k">val</span> <span class="n">main</span> <span class="k">=</span> <span class="nc">PlayProject</span><span class="o">(</span><span class="n">appName</span><span class="o">,</span> <span class="n">appVersion</span><span class="o">,</span> <span class="n">appDependencies</span><span class="o">,</span> <span class="n">mainLang</span> <span class="k">=</span> <span class="nc">SCALA</span><span class="o">).</span><span class="n">settings</span><span class="o">(</span>
+  <span class="n">resolvers</span> <span class="o">+=</span> <span class="s">"teamon.eu repo"</span> <span class="n">at</span> <span class="s">"http://repo.teamon.eu"</span>
+<span class="o">)</span>
+</pre></div>
+
+<p>Delete <code>conf/routes</code> file (optional since 0.3.0, you can use both)</p>
+
+<p>Create new file <code>PROJECT_ROOT/app/controllers/nav.scala</code>:</p>
+
+<div class="highlight"><pre><span class="k">package</span> <span class="nn">controllers</span>
+
+<span class="k">import</span> <span class="nn">play.navigator._</span>
+
+<span class="k">object</span> <span class="nc">nav</span> <span class="k">extends</span> <span class="nc">PlayNavigator</span> <span class="o">{</span>
+    <span class="c1">// Your routes definition (see below)</span>
+<span class="o">}</span>
+</pre></div>
+
+<p>Your <code>app/Global.scala</code> should look like this</p>
+
+<div class="highlight"><pre><span class="k">import</span> <span class="nn">play.api._</span>
+<span class="k">import</span> <span class="nn">play.api.mvc._</span>
+
+<span class="k">object</span> <span class="nc">Global</span> <span class="k">extends</span> <span class="nc">GlobalSettings</span> <span class="o">{</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="n">onRouteRequest</span><span class="o">(</span><span class="n">request</span><span class="k">:</span> <span class="kt">RequestHeader</span><span class="o">)</span> <span class="k">=</span> <span class="o">{</span>
+    <span class="n">controllers</span><span class="o">.</span><span class="n">nav</span><span class="o">.</span><span class="n">onRouteRequest</span><span class="o">(</span><span class="n">request</span><span class="o">)</span> <span class="c1">// handle requests with play-navigator</span>
+
+    <span class="c1">// optionally you can fallback to standard Play routes with</span>
+    <span class="c1">// controllers.nav.onRouteRequest(request) orElse super.onRouteRequest(request)</span>
+  <span class="o">}</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="n">onHandlerNotFound</span><span class="o">(</span><span class="n">request</span><span class="k">:</span> <span class="kt">RequestHeader</span><span class="o">)</span> <span class="k">=</span> <span class="o">{</span>
+    <span class="n">controllers</span><span class="o">.</span><span class="n">nav</span><span class="o">.</span><span class="n">onHandlerNotFound</span><span class="o">(</span><span class="n">request</span><span class="o">)</span> <span class="c1">// display 404 page with routes documentation</span>
+  <span class="o">}</span>
+
+<span class="o">}</span>
+</pre></div>
+
+<h2>Routes definition</h2>
+
+<div class="highlight"><pre><span class="c1">// Basic</span>
+<span class="k">val</span> <span class="n">home</span>  <span class="k">=</span> <span class="nc">GET</span>   <span class="n">on</span> <span class="n">root</span>       <span class="n">to</span> <span class="nc">Application</span><span class="o">.</span><span class="n">index</span>
+<span class="k">val</span> <span class="n">index</span> <span class="k">=</span> <span class="nc">GET</span>   <span class="n">on</span> <span class="s">"index"</span>    <span class="n">to</span> <span class="nc">Application</span><span class="o">.</span><span class="n">index</span>
+<span class="k">val</span> <span class="n">about</span> <span class="k">=</span> <span class="nc">GET</span>   <span class="n">on</span> <span class="s">"about"</span>    <span class="n">to</span> <span class="nc">Application</span><span class="o">.</span><span class="n">about</span>
+<span class="k">val</span> <span class="n">foo</span>   <span class="k">=</span> <span class="nc">POST</span>  <span class="n">on</span> <span class="s">"foo"</span>      <span class="n">to</span> <span class="nc">Application</span><span class="o">.</span><span class="n">about</span>
+<span class="k">val</span> <span class="n">show</span>  <span class="k">=</span> <span class="nc">GET</span>   <span class="n">on</span> <span class="s">"show"</span> <span class="o">/</span> <span class="o">*</span> <span class="n">to</span> <span class="nc">Application</span><span class="o">.</span><span class="n">show</span>
+<span class="k">val</span> <span class="n">ws</span>    <span class="k">=</span> <span class="nc">GET</span>   <span class="n">on</span> <span class="s">"ws"</span>       <span class="n">to</span> <span class="nc">Application</span><span class="o">.</span><span class="n">ws</span>
+<span class="k">val</span> <span class="n">bar</span>   <span class="k">=</span> <span class="nc">GET</span>   <span class="n">on</span> <span class="s">"bar"</span> <span class="o">/</span> <span class="o">*</span> <span class="o">/</span> <span class="o">*</span> <span class="o">/</span> <span class="s">"blah"</span> <span class="o">/</span> <span class="o">*</span> <span class="n">to</span> <span class="nc">Application</span><span class="o">.</span><span class="n">bar</span>
+
+<span class="c1">// Catches /long/a/b/c/.../z</span>
+<span class="k">var</span> <span class="n">long</span>  <span class="k">=</span> <span class="nc">GET</span>   <span class="n">on</span> <span class="s">"long"</span> <span class="o">/</span> <span class="o">**</span> <span class="n">to</span> <span class="nc">Application</span><span class="o">.</span><span class="n">long</span>
+
+<span class="c1">// Require extension: /ext/{param}.{ext}</span>
+<span class="nc">GET</span> <span class="n">on</span> <span class="s">"ext"</span> <span class="o">/</span> <span class="o">*</span> <span class="n">as</span> <span class="s">"json"</span> <span class="n">to</span> <span class="nc">Application</span><span class="o">.</span><span class="n">extJson</span>
+<span class="nc">GET</span> <span class="n">on</span> <span class="s">"ext"</span> <span class="o">/</span> <span class="o">*</span> <span class="n">as</span> <span class="s">"xml"</span>  <span class="n">to</span> <span class="nc">Application</span><span class="o">.</span><span class="n">extXml</span>
+
+<span class="c1">// REST routes</span>
+<span class="k">val</span> <span class="n">todos</span> <span class="k">=</span> <span class="n">resources</span><span class="o">(</span><span class="s">"todos"</span><span class="o">,</span> <span class="nc">Todos</span><span class="o">)</span>
+
+<span class="c1">// Namespace ...</span>
+<span class="n">namespace</span><span class="o">(</span><span class="s">"api"</span><span class="o">){</span>
+  <span class="n">namespace</span><span class="o">(</span><span class="s">"v1"</span><span class="o">){</span>
+    <span class="nc">GET</span> <span class="n">on</span> <span class="s">"index"</span> <span class="n">to</span> <span class="nc">Application</span><span class="o">.</span><span class="n">index</span> <span class="k">_</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="c1">// ... or with reverse routing support</span>
+<span class="k">val</span> <span class="n">api</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Namespace</span><span class="o">(</span><span class="s">"api"</span><span class="o">){</span>
+  <span class="k">val</span> <span class="n">v2</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Namespace</span><span class="o">(</span><span class="s">"v2"</span><span class="o">){</span>
+    <span class="k">val</span> <span class="n">about</span> <span class="k">=</span> <span class="nc">GET</span> <span class="n">on</span> <span class="s">"about"</span> <span class="n">to</span> <span class="nc">Application</span><span class="o">.</span><span class="n">about</span> <span class="k">_</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="c1">// and back to top-level namespace</span>
+<span class="nc">GET</span>   <span class="n">on</span> <span class="s">"showalt"</span> <span class="o">/</span> <span class="o">*</span> <span class="n">to</span> <span class="nc">Application</span><span class="o">.</span><span class="n">show</span>
+
+<span class="c1">// redirect</span>
+<span class="nc">GET</span> <span class="n">on</span> <span class="s">"redirect-me"</span> <span class="n">to</span> <span class="n">redirect</span><span class="o">(</span><span class="s">"http://google.com"</span><span class="o">)</span>
+
+<span class="c1">// assets</span>
+<span class="k">val</span> <span class="n">assets</span> <span class="k">=</span> <span class="nc">GET</span> <span class="n">on</span> <span class="s">"assets"</span> <span class="o">/</span> <span class="o">**</span> <span class="n">to</span> <span class="o">{</span> <span class="n">s</span><span class="k">:</span> <span class="kt">String</span> <span class="o">=&gt;</span> <span class="nc">Assets</span><span class="o">.</span><span class="n">at</span><span class="o">(</span><span class="n">path</span><span class="o">=</span><span class="s">"/public"</span><span class="o">,</span> <span class="n">s</span><span class="o">)</span> <span class="o">}</span>
+</pre></div>
+
+<p><code>Application</code> and <code>Todos</code> controllers used in example</p>
+
+<div class="highlight"><pre><span class="c1">// app/controllers/Application.scala</span>
+<span class="k">package</span> <span class="nn">controllers</span>
+
+<span class="k">import</span> <span class="nn">play.api.mvc._</span>
+
+<span class="k">object</span> <span class="nc">Application</span> <span class="k">extends</span> <span class="nc">Controller</span> <span class="o">{</span>
+
+  <span class="k">def</span> <span class="n">index</span><span class="o">()</span><span class="k">:</span> <span class="kt">Action</span><span class="o">[</span><span class="k">_</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span>
+    <span class="nc">Ok</span><span class="o">(</span><span class="s">"Applcation.index =&gt; "</span> <span class="o">+</span> <span class="n">routes</span><span class="o">.</span><span class="n">index</span><span class="o">())</span>
+  <span class="o">}</span>
+
+  <span class="k">def</span> <span class="n">about</span><span class="o">()</span><span class="k">:</span> <span class="kt">Action</span><span class="o">[</span><span class="k">_</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span>
+    <span class="nc">Ok</span><span class="o">(</span><span class="s">"Application.about =&gt; "</span> <span class="o">+</span> <span class="n">routes</span><span class="o">.</span><span class="n">about</span><span class="o">()</span> <span class="o">+</span> <span class="s">" or "</span> <span class="o">+</span> <span class="n">routes</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">v2</span><span class="o">.</span><span class="n">about</span><span class="o">())</span>
+  <span class="o">}</span>
+
+  <span class="k">def</span> <span class="n">show</span><span class="o">(</span><span class="n">id</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Action</span><span class="o">[</span><span class="k">_</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span>
+    <span class="nc">Ok</span><span class="o">(</span><span class="s">"Application.show(%d) =&gt; %s"</span> <span class="n">format</span> <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">routes</span><span class="o">.</span><span class="n">show</span><span class="o">(</span><span class="n">id</span><span class="o">)))</span>
+  <span class="o">}</span>
+
+  <span class="k">def</span> <span class="n">bar</span><span class="o">(</span><span class="n">f</span><span class="k">:</span> <span class="kt">Float</span><span class="o">,</span> <span class="n">b</span><span class="k">:</span> <span class="kt">Boolean</span><span class="o">,</span> <span class="n">s</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">Action</span><span class="o">[</span><span class="k">_</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span>
+    <span class="nc">Ok</span><span class="o">(</span><span class="s">"Application.bar(%f, %b, %s) =&gt; %s"</span> <span class="n">format</span> <span class="o">(</span><span class="n">f</span><span class="o">,</span> <span class="n">b</span><span class="o">,</span> <span class="n">s</span><span class="o">,</span> <span class="n">routes</span><span class="o">.</span><span class="n">bar</span><span class="o">(</span><span class="n">f</span><span class="o">,</span><span class="n">b</span><span class="o">,</span><span class="n">s</span><span class="o">)))</span>
+  <span class="o">}</span>
+
+  <span class="k">def</span> <span class="n">long</span><span class="o">(</span><span class="n">path</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span>
+    <span class="nc">Ok</span><span class="o">(</span><span class="s">"Application.long(%s)"</span> <span class="n">format</span> <span class="n">path</span><span class="o">)</span>
+  <span class="o">}</span>
+
+  <span class="k">def</span> <span class="n">extJson</span><span class="o">(</span><span class="n">id</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span> <span class="nc">Ok</span><span class="o">(</span><span class="s">"Application.extJson(%d)"</span> <span class="n">format</span> <span class="n">id</span><span class="o">)</span> <span class="o">}</span>
+  <span class="k">def</span> <span class="n">extXml</span><span class="o">(</span><span class="n">id</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span> <span class="nc">Ok</span><span class="o">(</span><span class="s">"Application.extXml(%s)"</span> <span class="n">format</span> <span class="n">id</span><span class="o">)</span> <span class="o">}</span>
+
+  <span class="k">import</span> <span class="nn">play.api.libs.iteratee._</span>
+
+  <span class="k">def</span> <span class="n">ws</span><span class="o">()</span> <span class="k">=</span> <span class="nc">WebSocket</span><span class="o">.</span><span class="n">using</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span> <span class="o">{</span> <span class="n">request</span> <span class="k">=&gt;</span>
+    <span class="k">val</span> <span class="n">in</span> <span class="k">=</span> <span class="nc">Iteratee</span><span class="o">.</span><span class="n">foreach</span><span class="o">[</span><span class="kt">String</span><span class="o">](</span><span class="n">println</span><span class="o">).</span><span class="n">mapDone</span> <span class="o">{</span> <span class="k">_</span> <span class="k">=&gt;</span>
+      <span class="n">println</span><span class="o">(</span><span class="s">"Disconnected"</span><span class="o">)</span>
+    <span class="o">}</span>
+
+    <span class="k">val</span> <span class="n">out</span> <span class="k">=</span> <span class="nc">Enumerator</span><span class="o">(</span><span class="s">"Hello!"</span><span class="o">)</span>
+
+    <span class="o">(</span><span class="n">in</span><span class="o">,</span> <span class="n">out</span><span class="o">)</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+
+
+<span class="c1">// app/controllers/Todos.scala</span>
+<span class="k">package</span> <span class="nn">controllers</span>
+
+<span class="k">import</span> <span class="nn">play.api._</span>
+<span class="k">import</span> <span class="nn">play.api.mvc._</span>
+<span class="k">import</span> <span class="nn">navigator._</span>
+
+<span class="k">object</span> <span class="nc">Todos</span> <span class="k">extends</span> <span class="nc">Controller</span> <span class="k">with</span> <span class="nc">PlayResources</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span> <span class="o">{</span>
+  <span class="k">def</span> <span class="n">index</span><span class="o">()</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span> <span class="nc">Ok</span><span class="o">(</span><span class="s">"Todos.index =&gt; %s"</span> <span class="n">format</span> <span class="n">nav</span><span class="o">.</span><span class="n">todos</span><span class="o">.</span><span class="n">index</span><span class="o">())</span> <span class="o">}</span>
+  <span class="k">def</span> <span class="n">`new`</span><span class="o">()</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span> <span class="nc">Ok</span><span class="o">(</span><span class="s">"Todos.new =&gt; %s"</span> <span class="n">format</span> <span class="n">nav</span><span class="o">.</span><span class="n">todos</span><span class="o">.</span><span class="n">`new`</span><span class="o">())</span> <span class="o">}</span>
+  <span class="k">def</span> <span class="n">create</span><span class="o">()</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span> <span class="nc">Ok</span><span class="o">(</span><span class="s">"Todos.create =&gt; %s"</span> <span class="n">format</span> <span class="n">nav</span><span class="o">.</span><span class="n">todos</span><span class="o">.</span><span class="n">create</span><span class="o">())</span> <span class="o">}</span>
+  <span class="k">def</span> <span class="n">show</span><span class="o">(</span><span class="n">id</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span> <span class="nc">Ok</span><span class="o">(</span><span class="s">"Todos.show(%d) =&gt; %s"</span> <span class="n">format</span> <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">nav</span><span class="o">.</span><span class="n">todos</span><span class="o">.</span><span class="n">show</span><span class="o">(</span><span class="n">id</span><span class="o">)))</span> <span class="o">}</span>
+  <span class="k">def</span> <span class="n">edit</span><span class="o">(</span><span class="n">id</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span> <span class="nc">Ok</span><span class="o">(</span><span class="s">"Todos.edit(%d) =&gt; %s"</span> <span class="n">format</span> <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">nav</span><span class="o">.</span><span class="n">todos</span><span class="o">.</span><span class="n">edit</span><span class="o">(</span><span class="n">id</span><span class="o">)))</span> <span class="o">}</span>
+  <span class="k">def</span> <span class="n">update</span><span class="o">(</span><span class="n">id</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span> <span class="nc">Ok</span><span class="o">(</span><span class="s">"Todos.update(%d) =&gt; %s"</span> <span class="n">format</span> <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">nav</span><span class="o">.</span><span class="n">todos</span><span class="o">.</span><span class="n">update</span><span class="o">(</span><span class="n">id</span><span class="o">)))</span> <span class="o">}</span>
+  <span class="k">def</span> <span class="n">delete</span><span class="o">(</span><span class="n">id</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span> <span class="nc">Ok</span><span class="o">(</span><span class="s">"Todos.delete(%d) =&gt; %s"</span> <span class="n">format</span> <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">nav</span><span class="o">.</span><span class="n">todos</span><span class="o">.</span><span class="n">delete</span><span class="o">(</span><span class="n">id</span><span class="o">)))</span> <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+
+<h2>Mountable routers</h2>
+
+<div class="highlight"><pre><span class="k">case</span> <span class="k">class</span> <span class="nc">FirstModule</span><span class="o">(</span><span class="n">parent</span><span class="k">:</span> <span class="kt">PlayNavigator</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">PlayModule</span><span class="o">(</span><span class="n">parent</span><span class="o">)</span> <span class="k">with</span> <span class="nc">Controller</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="n">home</span> <span class="k">=</span> <span class="nc">GET</span> <span class="n">on</span> <span class="n">root</span> <span class="n">to</span> <span class="n">first</span><span class="o">.</span><span class="nc">Application</span><span class="o">.</span><span class="n">index</span>
+  <span class="k">val</span> <span class="n">foobar</span> <span class="k">=</span> <span class="nc">GET</span> <span class="n">on</span> <span class="s">"foo"</span> <span class="o">/</span> <span class="s">"bar"</span> <span class="o">/</span> <span class="o">*</span> <span class="n">to</span> <span class="n">first</span><span class="o">.</span><span class="nc">Application</span><span class="o">.</span><span class="n">foo</span>
+<span class="o">}</span>
+
+<span class="k">case</span> <span class="k">class</span> <span class="nc">SecondModule</span><span class="o">(</span><span class="n">parent</span><span class="k">:</span> <span class="kt">PlayNavigator</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">PlayModule</span><span class="o">(</span><span class="n">parent</span><span class="o">)</span> <span class="k">with</span> <span class="nc">Controller</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="n">home</span> <span class="k">=</span> <span class="nc">GET</span> <span class="n">on</span> <span class="n">root</span> <span class="n">to</span> <span class="o">(()</span> <span class="k">=&gt;</span> <span class="n">second</span><span class="o">.</span><span class="nc">Application</span><span class="o">.</span><span class="n">index</span>
+  <span class="k">val</span> <span class="n">foobar</span> <span class="k">=</span> <span class="nc">GET</span> <span class="n">on</span> <span class="s">"foo"</span> <span class="o">/</span> <span class="s">"bar"</span> <span class="o">/</span> <span class="o">*</span> <span class="n">to</span> <span class="n">second</span><span class="o">.</span><span class="nc">Application</span><span class="o">.</span><span class="n">foo</span>
+<span class="o">}</span>
+
+<span class="c1">// Main router</span>
+<span class="k">object</span> <span class="nc">nav</span> <span class="k">extends</span> <span class="nc">PlayNavigator</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="n">first</span> <span class="k">=</span> <span class="s">"first"</span> <span class="o">--&gt;</span> <span class="nc">FirstModule</span>
+    <span class="k">val</span> <span class="n">second</span> <span class="k">=</span> <span class="s">"second"</span> <span class="o">/</span> <span class="s">"module"</span> <span class="o">--&gt;</span> <span class="nc">SecondModule</span>
+<span class="o">}</span>
+</pre></div>
+
+<p>Generated routes:</p>
+
+<pre><code>/first
+/first/foo/bar/*
+/second/module
+/second/module/foo/bar/*
+</code></pre>
+
+<p>and reverse routing:</p>
+
+<div class="highlight"><pre><span class="n">nav</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">home</span><span class="o">()</span> <span class="c1">// =&gt; "/first"</span>
+<span class="n">nav</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">foo</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span> <span class="c1">// =&gt; "/first/foo/bar/3"</span>
+<span class="n">nav</span><span class="o">.</span><span class="n">second</span><span class="o">.</span><span class="n">home</span><span class="o">()</span> <span class="c1">// =&gt; "/second/module"</span>
+<span class="n">nav</span><span class="o">.</span><span class="n">second</span><span class="o">.</span><span class="n">foo</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span> <span class="c1">// =&gt; "/second/module/foo/bar/3"</span>
+</pre></div>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Play-navigator maintained by <a href="https://github.com/teamon">teamon</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
