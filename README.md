@@ -198,7 +198,7 @@ Generated routes:
 
 and reverse routing:
 
-```
+``` scala 
 nav.first.home() // => "/first"
 nav.first.foo(3) // => "/first/foo/bar/3"
 nav.second.home() // => "/second/module"
