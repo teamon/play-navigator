@@ -212,7 +212,7 @@ object navigator {
       def unapply[A](elems: List[PathElem], parts: List[String], handler: (A) => Out)(implicit ppa: PathParam[A]): Option[() => Out] = (elems, parts) match {
         case (Static(x) :: xs, y :: ys) if x == y => unapply(xs, ys, handler)
         case (* :: xs, ppa(a) :: ys) => PathMatcher0.unapply(xs, ys, () => handler(a))
-        case (** :: xs, ys) => ppa.unapply(ys.mkString("/", "/", "")).map { a => () => handler(a) }
+        case (** :: xs, ys) => ppa.unapply(ys.mkString("/")).map { a => () => handler(a) }
         case _ => None
       }
     }

@@ -8,7 +8,7 @@ Add `play-navigator` to your `project/Build.scala` file
 
 ``` scala
 val appDependencies = Seq(
-  "eu.teamon" %% "play-navigator" % "0.3.1"
+  "eu.teamon" %% "play-navigator" % "0.4.0"
 )
 
 val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
@@ -198,7 +198,7 @@ Generated routes:
 
 and reverse routing:
 
-``` scala 
+``` scala
 nav.first.home() // => "/first"
 nav.first.foo(3) // => "/first/foo/bar/3"
 nav.second.home() // => "/second/module"

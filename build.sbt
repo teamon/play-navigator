@@ -2,7 +2,7 @@ organization := "eu.teamon"
 
 name := "play-navigator"
 
-version := "0.3.1"
+version := "0.4.0"
 
 scalaVersion := "2.9.1"
 

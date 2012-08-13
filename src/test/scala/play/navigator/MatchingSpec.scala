@@ -29,8 +29,8 @@ class MatchingSpec extends Specification {
   }
 
   "catch all" should {
-    "match GET /reallycatchall/1/2/c/d" in { get("/reallycatchall/1/2/c/d") === Some("catchall and more = 1 2 /c/d") }
-    "match GET /reallycatchall/a/b/c/d/e/f" in { get("/reallycatchall/a/b/c/d/e/f") === Some("catchall = /a/b/c/d/e/f") }
+    "match GET /reallycatchall/1/2/c/d" in { get("/reallycatchall/1/2/c/d") === Some("catchall and more = 1 2 c/d") }
+    "match GET /reallycatchall/a/b/c/d/e/f" in { get("/reallycatchall/a/b/c/d/e/f") === Some("catchall = a/b/c/d/e/f") }
   }
 
   "extension" should {
