@@ -19,3 +19,8 @@ libraryDependencies ++= Seq(
   "play" %% "play-test" % Option(System.getenv("PLAY_VERSION")).getOrElse("2.0") % "test",
   "org.specs2" %% "specs2" % "1.7.1" % "test"
 )
+
+seq(scalajarsSettings:_*)
+
+scalajarsProjectName := "play-navigator"
+
