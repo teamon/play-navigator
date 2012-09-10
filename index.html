@@ -40,11 +40,11 @@
 <p>Add <code>play-navigator</code> to your <code>project/Build.scala</code> file</p>
 
 <div class="highlight"><pre><span class="k">val</span> <span class="n">appDependencies</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
-  <span class="s">"eu.teamon"</span> <span class="o">%%</span> <span class="s">"play-navigator"</span> <span class="o">%</span> <span class="s">"0.3.1"</span>
+  <span class="s">"eu.teamon"</span> <span class="o">%%</span> <span class="s">"play-navigator"</span> <span class="o">%</span> <span class="s">"0.4.0"</span>
 <span class="o">)</span>
 
 <span class="k">val</span> <span class="n">main</span> <span class="k">=</span> <span class="nc">PlayProject</span><span class="o">(</span><span class="n">appName</span><span class="o">,</span> <span class="n">appVersion</span><span class="o">,</span> <span class="n">appDependencies</span><span class="o">,</span> <span class="n">mainLang</span> <span class="k">=</span> <span class="nc">SCALA</span><span class="o">).</span><span class="n">settings</span><span class="o">(</span>
-  <span class="n">resolvers</span> <span class="o">+=</span> <span class="s">"teamon.eu repo"</span> <span class="n">at</span> <span class="s">"http://repo.teamon.eu"</span>
+  <span class="n">resolvers</span> <span class="o">+=</span> <span class="s">"scalajars.org repo"</span> <span class="n">at</span> <span class="s">"http://scalajars.org/repository"</span>
 <span class="o">)</span>
 </pre></div>
 
@@ -80,6 +80,7 @@
   <span class="o">}</span>
 
 <span class="o">}</span>
+
 </pre></div>
 
 <h2>Routes definition</h2>
@@ -125,6 +126,7 @@
 
 <span class="c1">// assets</span>
 <span class="k">val</span> <span class="n">assets</span> <span class="k">=</span> <span class="nc">GET</span> <span class="n">on</span> <span class="s">"assets"</span> <span class="o">/</span> <span class="o">**</span> <span class="n">to</span> <span class="o">{</span> <span class="n">s</span><span class="k">:</span> <span class="kt">String</span> <span class="o">=&gt;</span> <span class="nc">Assets</span><span class="o">.</span><span class="n">at</span><span class="o">(</span><span class="n">path</span><span class="o">=</span><span class="s">"/public"</span><span class="o">,</span> <span class="n">s</span><span class="o">)</span> <span class="o">}</span>
+
 </pre></div>
 
 <p><code>Application</code> and <code>Todos</code> controllers used in example</p>
@@ -189,6 +191,7 @@
   <span class="k">def</span> <span class="n">update</span><span class="o">(</span><span class="n">id</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span> <span class="nc">Ok</span><span class="o">(</span><span class="s">"Todos.update(%d) =&gt; %s"</span> <span class="n">format</span> <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">nav</span><span class="o">.</span><span class="n">todos</span><span class="o">.</span><span class="n">update</span><span class="o">(</span><span class="n">id</span><span class="o">)))</span> <span class="o">}</span>
   <span class="k">def</span> <span class="n">delete</span><span class="o">(</span><span class="n">id</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span> <span class="k">=</span> <span class="nc">Action</span> <span class="o">{</span> <span class="nc">Ok</span><span class="o">(</span><span class="s">"Todos.delete(%d) =&gt; %s"</span> <span class="n">format</span> <span class="o">(</span><span class="n">id</span><span class="o">,</span> <span class="n">nav</span><span class="o">.</span><span class="n">todos</span><span class="o">.</span><span class="n">delete</span><span class="o">(</span><span class="n">id</span><span class="o">)))</span> <span class="o">}</span>
 <span class="o">}</span>
+
 </pre></div>
 
 <h2>Mountable routers</h2>
