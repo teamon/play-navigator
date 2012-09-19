@@ -4,4 +4,4 @@ resolvers += "scalajars.org repository" at "http://scalajars.org/repository"
 
 addSbtPlugin("reaktor" %% "sbt-scct" % "0.2-SNAPSHOT")
 
-addSbtPlugin("org.scalajars" %% "sbt-scalajars" % "0.1.0")
+addSbtPlugin("org.scalajars" %% "sbt-scalajars" % "0.1.1")
