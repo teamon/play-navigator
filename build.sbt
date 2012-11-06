@@ -15,8 +15,8 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "play" %% "play" % Option(System.getenv("PLAY_VERSION")).getOrElse("2.0") % "compile",
-  "play" %% "play-test" % Option(System.getenv("PLAY_VERSION")).getOrElse("2.0") % "test",
+  "play" %% "play" % Option(System.getenv("PLAY_VERSION")).getOrElse("2.0.4") % "compile",
+  "play" %% "play-test" % Option(System.getenv("PLAY_VERSION")).getOrElse("2.0.4") % "test",
   "org.specs2" %% "specs2" % "1.7.1" % "test"
 )
 
