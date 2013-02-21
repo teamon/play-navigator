@@ -1,10 +1,9 @@
 package play
 
+import scala.language.reflectiveCalls
 import play.navigator._
-
-import org.specs2.mutable._
-
 import play.api.test._
+import org.specs2.mutable._
 
 class DSLSpec extends Specification {
   import RoutesDefinition._

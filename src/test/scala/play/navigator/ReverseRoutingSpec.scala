@@ -1,11 +1,11 @@
 package play
 
+import scala.language.reflectiveCalls
 import play.navigator._
 import play.api.mvc.Call
-
+import play.api.test._
 import org.specs2.mutable._
 
-import play.api.test._
 
 class ReverseRoutingSpec extends Specification {
   import RoutesDefinition._

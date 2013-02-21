@@ -1,5 +1,6 @@
 package play
 
+import scala.language.implicitConversions
 import play.api.Mode
 import play.api.mvc._
 import play.api.mvc.Results.NotFound
@@ -62,7 +63,7 @@ object navigator {
       }.getOrElse(views.html.defaultpages.devNotFound.f)(request, Some(router)))
     }
 
-    def routes = new PartialFunction[RequestHeader, Handler] {
+    def _routes = new PartialFunction[RequestHeader, Handler] {
       private var _lastHandler: () => Handler = null // XXX: this one sucks a lot
 
       def apply(req: RequestHeader) = _lastHandler()
@@ -75,11 +76,13 @@ object navigator {
       }
     }
 
+    def routes = _routes
+
     // Provider for Play's 404 dev page
     // This object is used ONLY for displaying routes documentation
     val router = new play.core.Router.Routes {
       def documentation = (("###", "play-navigator routes", "") +: _documentation) ++ play.api.Play.maybeApplication.flatMap(_.routes.map(r => ("###", "play standard routes (in conf/routes file)", "") +: r.documentation)).getOrElse(Nil)
-      def routes = routes
+      def routes = _routes
       def prefix = ""
       def setPrefix(prefix: String) {}
     }
@@ -140,9 +143,9 @@ object navigator {
           path.reverse.split("\\.", 2).map(_.reverse).toList match {
             case x :: p :: Nil => (p, Some(x))
             case p :: Nil => (p, None)
-            case Nil => ("/", None)
+            case _ => ("/", None)
           }
-        } getOrElse (path, None)
+        }.getOrElse((path, None))
       }
 
       def args: List[Manifest[_]]
@@ -369,7 +372,7 @@ object navigator {
       def unapply(s: String): Option[T]
     }
 
-    def silent[T](f: => T) = try { Some(f) } catch { case _ => None }
+    def silent[T](f: => T) = try { Some(f) } catch { case _: Throwable => None }
     implicit val IntPathParam: PathParam[Int] = new PathParam[Int] {
       def apply(i: Int) = i.toString
       def unapply(s: String) = silent(s.toInt)
