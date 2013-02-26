@@ -56,13 +56,13 @@ object Global extends GlobalSettings {
 ## Routes definition
 
 ``` scala
-// Basic
-val home  = GET   on root       to Application.index
-val index = GET   on "index"    to Application.index
-val about = GET   on "about"    to Application.about
-val foo   = POST  on "foo"      to Application.about
+// Basic. Remember to add '_' after parameterless functions.
+val home  = GET   on root       to Application.index _
+val index = GET   on "index"    to Application.index _
+val about = GET   on "about"    to Application.about _
+val foo   = POST  on "foo"      to Application.about _
 val show  = GET   on "show" / * to Application.show
-val ws    = GET   on "ws"       to Application.ws
+val ws    = GET   on "ws"       to Application.ws _
 val bar   = GET   on "bar" / * / * / "blah" / * to Application.bar
 
 // Catches /long/a/b/c/.../z
@@ -171,12 +171,12 @@ object Todos extends Controller with PlayResources[Int] {
 
 ``` scala
 case class FirstModule(parent: PlayNavigator) extends PlayModule(parent) with Controller {
-  val home = GET on root to first.Application.index
+  val home = GET on root to first.Application.index _
   val foobar = GET on "foo" / "bar" / * to first.Application.foo
 }
 
 case class SecondModule(parent: PlayNavigator) extends PlayModule(parent) with Controller {
-  val home = GET on root to (() => second.Application.index
+  val home = GET on root to (() => second.Application.index)
   val foobar = GET on "foo" / "bar" / * to second.Application.foo
 }
 
