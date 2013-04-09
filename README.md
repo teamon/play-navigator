@@ -154,7 +154,7 @@ import play.api._
 import play.api.mvc._
 import navigator._
 
-object Todos extends Controller with PlayResources[Int] {
+object Todos extends Controller with PlayResourcesController[Int] {
   def index() = Action { Ok("Todos.index => %s" format nav.todos.index()) }
   def `new`() = Action { Ok("Todos.new => %s" format nav.todos.`new`()) }
   def create() = Action { Ok("Todos.create => %s" format nav.todos.create()) }
