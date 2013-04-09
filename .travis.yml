@@ -1,13 +1,10 @@
 language: scala
 scala:
-  - 2.9.1
-  - 2.10.0
+  - 2.10
 jdk:
   - oraclejdk7
   - openjdk7
   - openjdk6
 env:
-  - PLAY_VERSION=2.0
-  - PLAY_VERSION=2.0.1
-  - PLAY_VERSION=2.0.2
-  - PLAY_VERSION=2.1-SNAPSHOT
+  - PLAY_VERSION=2.1.0
+  - PLAY_VERSION=2.1.1
