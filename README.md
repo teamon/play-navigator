@@ -1,6 +1,6 @@
 ## Better router for Play Framework 2.0
 
-The "why" and "how" - http://codetunes.com/2012/05/09/scala-dsl-tutorial-writing-web-framework-router
+The "why" and "how" - http://codetunes.com/2012/scala-dsl-tutorial-writing-web-framework-router
 
 ## Installation
 
