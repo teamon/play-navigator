@@ -31,11 +31,13 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <h2>Better router for Play Framework 2.0</h2>
+        <h2>
+<a name="better-router-for-play-framework-20" class="anchor" href="#better-router-for-play-framework-20"><span class="octicon octicon-link"></span></a>Better router for Play Framework 2.0</h2>
 
-<p>The "why" and "how" - <a href="http://codetunes.com/2012/05/09/scala-dsl-tutorial-writing-web-framework-router">http://codetunes.com/2012/05/09/scala-dsl-tutorial-writing-web-framework-router</a></p>
+<p>The "why" and "how" - <a href="http://codetunes.com/2012/scala-dsl-tutorial-writing-web-framework-router">http://codetunes.com/2012/scala-dsl-tutorial-writing-web-framework-router</a></p>
 
-<h2>Installation</h2>
+<h2>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
 
 <p>Add <code>play-navigator</code> to your <code>project/Build.scala</code> file</p>
 
@@ -83,7 +85,8 @@
 
 </pre></div>
 
-<h2>Routes definition</h2>
+<h2>
+<a name="routes-definition" class="anchor" href="#routes-definition"><span class="octicon octicon-link"></span></a>Routes definition</h2>
 
 <div class="highlight"><pre><span class="c1">// Basic. Remember to add '_' after parameterless functions.</span>
 <span class="k">val</span> <span class="n">home</span>  <span class="k">=</span> <span class="nc">GET</span>   <span class="n">on</span> <span class="n">root</span>       <span class="n">to</span> <span class="nc">Application</span><span class="o">.</span><span class="n">index</span> <span class="k">_</span>
@@ -194,7 +197,8 @@
 
 </pre></div>
 
-<h2>Mountable routers</h2>
+<h2>
+<a name="mountable-routers" class="anchor" href="#mountable-routers"><span class="octicon octicon-link"></span></a>Mountable routers</h2>
 
 <div class="highlight"><pre><span class="k">case</span> <span class="k">class</span> <span class="nc">FirstModule</span><span class="o">(</span><span class="n">parent</span><span class="k">:</span> <span class="kt">PlayNavigator</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">PlayModule</span><span class="o">(</span><span class="n">parent</span><span class="o">)</span> <span class="k">with</span> <span class="nc">Controller</span> <span class="o">{</span>
   <span class="k">val</span> <span class="n">home</span> <span class="k">=</span> <span class="nc">GET</span> <span class="n">on</span> <span class="n">root</span> <span class="n">to</span> <span class="n">first</span><span class="o">.</span><span class="nc">Application</span><span class="o">.</span><span class="n">index</span> <span class="k">_</span>
