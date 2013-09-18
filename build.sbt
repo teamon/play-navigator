@@ -23,4 +23,5 @@ libraryDependencies ++= Seq(
   "org.specs2" % "specs2_2.10" % "1.14" % "test"
 )
 
-publishTo := Some(Resolver.file("local-maven", new File("/Users/teamon/code/maven")))
+publishTo := Some(Resolver.file("local-maven", new File(Path.userHome.absolutePath + "/.m2/repository")))
+
