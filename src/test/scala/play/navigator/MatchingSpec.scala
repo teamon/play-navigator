@@ -3,7 +3,7 @@ package play
 import play.navigator._
 import org.specs2.mutable._
 import play.api.test._
-import play.api.test.Helpers.{routeAndCall, contentAsString}
+import play.api.test.Helpers._
 import play.api.mvc._
 
 class MatchingSpec extends Specification {
