@@ -19,8 +19,9 @@ resolvers ++= Seq(
   Resolver.typesafeRepo("snapshots")
 )
 
+val play_version = Option(System.getenv("PLAY_VERSION")).getOrElse("2.2.0")
+
 libraryDependencies ++= (
-  val play_version = Option(System.getenv("PLAY_VERSION")).getOrElse("2.2.0") 
   Seq(
     "com.typesafe.play" %% "play" % play_version % "compile",
     "com.typesafe.play" %% "play-test" % play_version % "test",

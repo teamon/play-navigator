@@ -8,7 +8,7 @@ Add `play-navigator` to your `project/Build.scala` file
 
 ``` scala
 val appDependencies = Seq(
-  "eu.teamon" %% "play-navigator" % "0.4.0"
+  "eu.teamon" %% "play-navigator" % "0.5.0"
 )
 
 val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
