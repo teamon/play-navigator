@@ -16,6 +16,8 @@ val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).s
 )
 ```
 
+From 0.5.0 only Play >= 2.2.0 is supported. Use 0.4.0 if you need to support Play < 2.2.0.
+
 Delete `conf/routes` file (optional since 0.3.0, you can use both)
 
 Create new file `PROJECT_ROOT/app/controllers/nav.scala`:
@@ -46,7 +48,12 @@ object Global extends GlobalSettings {
   }
 
   override def onHandlerNotFound(request: RequestHeader) = {
-    controllers.nav.onHandlerNotFound(request) // display 404 page with routes documentation
+    // display 404 page with routes documentation
+    val result = controllers.nav.onHandlerNotFound(request)
+    // Play < 2.2.0
+    result 
+    // Play >= 2.2.0
+    Future.successful(result)
   }
 
 }
