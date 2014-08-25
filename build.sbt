@@ -2,9 +2,9 @@ organization := "eu.teamon"
 
 name := "play-navigator"
 
-version := "0.5.0"
+version := "0.5.1"
 
-scalaVersion := "2.10.2"
+scalaVersion := "2.10.4"
 
 scalaBinaryVersion := "2.10"
 
@@ -19,7 +19,7 @@ resolvers ++= Seq(
   Resolver.typesafeRepo("snapshots")
 )
 
-val play_version = Option(System.getenv("PLAY_VERSION")).getOrElse("2.2.0")
+val play_version = Option(System.getenv("PLAY_VERSION")).getOrElse("2.3.3")
 
 libraryDependencies ++= (
   Seq(
