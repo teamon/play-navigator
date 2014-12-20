@@ -1,11 +1,10 @@
 package play
 
 import scala.language.implicitConversions
-import play.api.Mode
+import play.api.{Mode => PlayMode}
 import play.api.mvc._
 import play.api.mvc.Results.NotFound
 import play.core.Router
-
 
 object navigator {
   type Out = Handler
@@ -43,7 +42,6 @@ object navigator {
     def documentation = _documentation
 
     lazy val _documentation = routesList.map { route =>
-
       val (parts, _) = ((List[String](), route.args) /: route.routeDef.elems){
         case ((res, x :: xs), *) => (res :+ ("[" + x + "]"), xs)
         case ((res, xs), e) => (res :+ e.toString, xs)
@@ -58,7 +56,7 @@ object navigator {
 
     def onHandlerNotFound(request: RequestHeader) = {
       NotFound(play.api.Play.maybeApplication.map {
-        case app if app.mode == Mode.Dev => views.html.defaultpages.devNotFound.f
+        case app if app.mode == PlayMode.Dev => views.html.defaultpages.devNotFound.f
         case app => views.html.defaultpages.notFound.f
       }.getOrElse(views.html.defaultpages.devNotFound.f)(request, Some(router)))
     }
