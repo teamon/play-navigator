@@ -1,10 +1,11 @@
 package play
 
-import scala.language.implicitConversions
 import play.api.Mode
-import play.api.mvc._
 import play.api.mvc.Results.NotFound
-import play.core.Router
+import play.api.mvc._
+
+import scala.language.implicitConversions
+import scala.util.Try
 
 
 object navigator {
@@ -17,6 +18,43 @@ object navigator {
   case object * extends PathElem
   case object ** extends PathElem
 
+
+  sealed trait Method {
+    def on[R](routeDef: RouteDef[R]): R = routeDef.withMethod(this)
+    def matches(s: String) = this.toString == s
+  }
+
+  sealed trait RouteDef[Self] {
+    def withMethod(method: Method): Self
+    def method: Method
+    def elems: List[PathElem]
+    def ext: Option[String]
+    def extString = ext map { "." + _ } getOrElse ""
+  }
+
+  sealed trait Route[RD] {
+    def routeDef: RouteDef[RD]
+    def unapply(req: RequestHeader): Option[() => Out]
+    def basic(req: RequestHeader) = {
+      lazy val extMatched = (for { extA <- routeDef.ext; extB <- extractExt(req.path)._2 } yield extA == extB) getOrElse true
+      routeDef.method.matches(req.method) && extMatched
+    }
+
+    def splitPath(path: String) = extractExt(path)._1.split("/")
+      .dropWhile(_ == "").toList.map(java.net.URLDecoder.decode(_,"utf-8"))
+
+    def extractExt(path: String) = {
+      routeDef.ext.map { _ =>
+        path.reverse.split("\\.", 2).map(_.reverse).toList match {
+          case x :: p :: Nil => (p, Some(x))
+          case p :: Nil => (p, None)
+          case _ => ("/", None)
+        }
+      }.getOrElse((path, None))
+    }
+
+    def args: List[Manifest[_]]
+  }
 
   trait Resources[T, Out] {
     def index(): Out
@@ -88,12 +126,6 @@ object navigator {
     }
 
 
-    sealed trait Method {
-      def on[R](routeDef: RouteDef[R]): R = routeDef.withMethod(this)
-      def matches(s: String) = this.toString == s
-    }
-
-
     val root = RouteDef0(ANY, Nil)
 
     implicit def stringToRouteDef0(name: String) = RouteDef0(ANY, Static(name) :: Nil)
@@ -128,42 +160,11 @@ object navigator {
     //   def extString = ext.map { "." + _ } getOrElse ""
     // }
 
-    sealed trait Route[RD] {
-      def routeDef: RouteDef[RD]
-      def unapply(req: RequestHeader): Option[() => Out]
-      def basic(req: RequestHeader) = {
-        lazy val extMatched = (for { extA <- routeDef.ext; extB <- extractExt(req.path)._2 } yield extA == extB) getOrElse true
-        routeDef.method.matches(req.method) && extMatched
-      }
-
-      def splitPath(path: String) = extractExt(path)._1.split("/").dropWhile(_ == "").toList
-
-      def extractExt(path: String) = {
-        routeDef.ext.map { _ =>
-          path.reverse.split("\\.", 2).map(_.reverse).toList match {
-            case x :: p :: Nil => (p, Some(x))
-            case p :: Nil => (p, None)
-            case _ => ("/", None)
-          }
-        }.getOrElse((path, None))
-      }
-
-      def args: List[Manifest[_]]
-    }
-
     case class Route0(routeDef: RouteDef0, f0: () => Out) extends Route[RouteDef0] {
       def apply(ext: Option[String] = routeDef.ext) = Call(routeDef.method.toString, PathMatcher0(routeDef.elems, ext)())
       def unapply(req: RequestHeader): Option[() => Out] =
         if(basic(req)) PathMatcher0.unapply(routeDef.elems, splitPath(req.path), f0) else None
       def args = Nil
-    }
-
-    sealed trait RouteDef[Self] {
-      def withMethod(method: Method): Self
-      def method: Method
-      def elems: List[PathElem]
-      def ext: Option[String]
-      def extString = ext map { "." + _ } getOrElse ""
     }
 
     case class RouteDef0(method: Method, elems: List[PathElem], ext: Option[String] = None) extends RouteDef[RouteDef0] {
@@ -369,38 +370,39 @@ object navigator {
 
     trait PathParam[T]{
       def apply(t: T): String
-      def unapply(s: String): Option[T]
+      final def unapply(s: String): Option[T] = Try(tryUnapply(s)).getOrElse(None)
+      def tryUnapply(s: String): Option[T]
     }
 
     def silent[T](f: => T) = try { Some(f) } catch { case _: Throwable => None }
     implicit val IntPathParam: PathParam[Int] = new PathParam[Int] {
       def apply(i: Int) = i.toString
-      def unapply(s: String) = silent(s.toInt)
+      def tryUnapply(s: String) = Option(s.toInt)
     }
 
     implicit val LongPathParam: PathParam[Long] = new PathParam[Long] {
       def apply(l: Long) = l.toString
-      def unapply(s: String) = silent(s.toLong)
+      def tryUnapply(s: String) = Option(s.toLong)
     }
 
     implicit val DoublePathParam: PathParam[Double] = new PathParam[Double] {
       def apply(d: Double) = d.toString
-      def unapply(s: String) = silent(s.toDouble)
+      def tryUnapply(s: String) = Option(s.toDouble)
     }
 
     implicit val FloatPathParam: PathParam[Float] = new PathParam[Float] {
       def apply(f: Float) = f.toString
-      def unapply(s: String) = silent(s.toFloat)
+      def tryUnapply(s: String) = Option(s.toFloat)
     }
 
     implicit val StringPathParam: PathParam[String] = new PathParam[String] {
       def apply(s: String) = s
-      def unapply(s: String) = Some(s)
+      def tryUnapply(s: String) = Option(s)
     }
 
     implicit val BooleanPathParam: PathParam[Boolean] = new PathParam[Boolean] {
       def apply(b: Boolean) = b.toString
-      def unapply(s: String) = s.toLowerCase match {
+      def tryUnapply(s: String) = s.toLowerCase match {
         case "1" | "true" | "yes" => Some(true)
         case "0" | "false" | "no" => Some(false)
         case _ => None
@@ -453,7 +455,10 @@ object navigator {
   }
 
   class PlayModule(parent: PlayNavigator) extends PlayNavigator with DelayedInit {
-    def delayedInit(body: => Unit) = withNamespace(parent.currentNamespace)(body)
+    def delayedInit(body: => Unit) = {
+      withNamespace(parent.currentNamespace)(body)
+      routesList.foreach(parent.addRoute)
+    }
   }
 
   trait PlayResourcesController[T] extends Resources[T, Handler] with Controller

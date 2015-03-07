@@ -21,11 +21,13 @@ class MatchingSpec extends Specification {
   "routes" should {
     "match GET /" in { get("/") === Some("index") }
     "match GET /xa/ya" in { get("/xa/ya") === Some("xa & ya") }
+    "match GET /x/%2F%2F%2F" in { get("/x/%2F%2F%2F") === Some("xstring = ///") }
     "not match GET /xa/ya/za" in { get("/xa/ya/za") === None }
     "match GET /x/3" in { get("/x/3") === Some("xint = 3") }
     "match GET /x/3.14" in { get("/x/3.14") === Some("xdouble = 3.14") }
     "match GET /x/3.14foo" in { get("/x/3.14foo") === Some("xstring = 3.14foo") }
     "match GET /b/true/False/1/0/YES/No" in { get("/b/true/False/1/0/YES/No") === Some("bool = true false true false true false") }
+    "match GET /second/module/foo/bar/42" in { get("/second/module/foo/bar/42") === Some("SecondModule foo/bar/42") }
   }
 
   "catch all" should {
