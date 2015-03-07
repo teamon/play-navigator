@@ -5,6 +5,7 @@ import play.api.mvc.Results.NotFound
 import play.api.mvc._
 
 import scala.language.implicitConversions
+import scala.util.Try
 
 
 object navigator {
@@ -368,38 +369,39 @@ object navigator {
 
     trait PathParam[T]{
       def apply(t: T): String
-      def unapply(s: String): Option[T]
+      final def unapply(s: String): Option[T] = Try(tryUnapply(s)).getOrElse(None)
+      def tryUnapply(s: String): Option[T]
     }
 
     def silent[T](f: => T) = try { Some(f) } catch { case _: Throwable => None }
     implicit val IntPathParam: PathParam[Int] = new PathParam[Int] {
       def apply(i: Int) = i.toString
-      def unapply(s: String) = silent(s.toInt)
+      def tryUnapply(s: String) = Option(s.toInt)
     }
 
     implicit val LongPathParam: PathParam[Long] = new PathParam[Long] {
       def apply(l: Long) = l.toString
-      def unapply(s: String) = silent(s.toLong)
+      def tryUnapply(s: String) = Option(s.toLong)
     }
 
     implicit val DoublePathParam: PathParam[Double] = new PathParam[Double] {
       def apply(d: Double) = d.toString
-      def unapply(s: String) = silent(s.toDouble)
+      def tryUnapply(s: String) = Option(s.toDouble)
     }
 
     implicit val FloatPathParam: PathParam[Float] = new PathParam[Float] {
       def apply(f: Float) = f.toString
-      def unapply(s: String) = silent(s.toFloat)
+      def tryUnapply(s: String) = Option(s.toFloat)
     }
 
     implicit val StringPathParam: PathParam[String] = new PathParam[String] {
       def apply(s: String) = s
-      def unapply(s: String) = Some(s)
+      def tryUnapply(s: String) = Option(s)
     }
 
     implicit val BooleanPathParam: PathParam[Boolean] = new PathParam[Boolean] {
       def apply(b: Boolean) = b.toString
-      def unapply(s: String) = s.toLowerCase match {
+      def tryUnapply(s: String) = s.toLowerCase match {
         case "1" | "true" | "yes" => Some(true)
         case "0" | "false" | "no" => Some(false)
         case _ => None
