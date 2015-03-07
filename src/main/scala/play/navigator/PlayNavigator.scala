@@ -40,7 +40,8 @@ object navigator {
       routeDef.method.matches(req.method) && extMatched
     }
 
-    def splitPath(path: String) = extractExt(path)._1.split("/").dropWhile(_ == "").toList
+    def splitPath(path: String) = extractExt(path)._1.split("/")
+      .dropWhile(_ == "").toList.map(java.net.URLDecoder.decode(_,"utf-8"))
 
     def extractExt(path: String) = {
       routeDef.ext.map { _ =>

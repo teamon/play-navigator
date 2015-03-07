@@ -21,6 +21,7 @@ class MatchingSpec extends Specification {
   "routes" should {
     "match GET /" in { get("/") === Some("index") }
     "match GET /xa/ya" in { get("/xa/ya") === Some("xa & ya") }
+    "match GET /x/%2F%2F%2F" in { get("/x/%2F%2F%2F") === Some("xstring = ///") }
     "not match GET /xa/ya/za" in { get("/xa/ya/za") === None }
     "match GET /x/3" in { get("/x/3") === Some("xint = 3") }
     "match GET /x/3.14" in { get("/x/3.14") === Some("xdouble = 3.14") }
