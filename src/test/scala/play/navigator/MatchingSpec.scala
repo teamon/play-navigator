@@ -26,6 +26,7 @@ class MatchingSpec extends Specification {
     "match GET /x/3.14" in { get("/x/3.14") === Some("xdouble = 3.14") }
     "match GET /x/3.14foo" in { get("/x/3.14foo") === Some("xstring = 3.14foo") }
     "match GET /b/true/False/1/0/YES/No" in { get("/b/true/False/1/0/YES/No") === Some("bool = true false true false true false") }
+    "match GET /second/module/foo/bar/42" in { get("/second/module/foo/bar/42") === Some("SecondModule foo/bar/42") }
   }
 
   "catch all" should {
